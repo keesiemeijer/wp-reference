@@ -1,9 +1,9 @@
 wp-reference
 ============
 
-VVV auto site setup script to mirror the [WordPress developer reference](https://developer.wordpress.org).
+VVV auto site setup script to mirror the [WordPress code reference](https://developer.wordpress.org).
 
-This bash script makes it easy to parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser) and mirror the developer reference using [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV).
+This bash script makes it easy to parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser) and mirror the WordPress code reference using [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV).
 
 The auto site setup script follows the directions found in this [WordPress devhub page](https://make.wordpress.org/docs/handbook/projects/devhub/#setting-up-your-development-environment).
 
