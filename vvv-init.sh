@@ -1,38 +1,50 @@
 # =============================================================================
-# VVV auto site setup script to mirror the wordpress developer reference.
+# VVV auto site setup script to mirror the WordPress code reference.
 # https://developer.wordpress.org
 # 
 # By keesiemeijer
-# https://github.com/keesiemeijer
+# https://github.com/keesiemeijer/wp-reference
 # 
 # Also Compatible with the VVV Apache variant.
 # https://github.com/ericmann/vvv-apache
 # 
-# This script follows the directions to mirror the dev reference found on the devhub page:
+# This script follows these directions to mirror the code reference:
 # http://make.wordpress.org/docs/handbook/projects/devhub/
 # 
 # When provisioning this script will:
-# 	Download WordPress in the directories /public and /source-code.
-# 	Install Wordpress (in the public dir) with domain 'wp-reference.dev'.
-# 	Install the plugin WP Parser and theme wporg-developer.
+# 	if the directories /public and /source-code don't exist (inside the wp-reference directory):
+# 	    Create directories /public and /source-code.
+# 	    Download WordPress inside both directories
+# 	    Install Wordpress (in the /public dir) with domain 'wp-reference.dev'.
+# 	Update Wordpress in both directories.
+# 	Install and activate the plugin WP Parser and theme wporg-developer.
 # 	Download and edit the header.php and footer.php files from wordpress.org.
 # 	Parse the /source-code directory with the WP Parser plugin.
-# 	Create a static front page.
-# 	Create a reference page.
-# 	
+# 	Create a static front page (if needed).
+# 	Create a reference page (if needed).
+# 
+# Credentials
+# 	URL:      wp-reference.dev
+# 	Username: admin
+# 	Password: password
+# 	DB Name:  wordpress-reference
+# 
 # Resources
-# 	https://github.com/varying-vagrant-vagrants/vvv/wiki/Auto-site-Setup	
+# 	https://github.com/keesiemeijer/wp-reference
+# 	https://github.com/Varying-Vagrant-Vagrants/VVV
+# 	https://github.com/varying-vagrant-vagrants/vvv/wiki/Auto-site-Setup
 # 	https://github.com/rmccue/WP-Parser
 # 	https://github.com/Rarst/wporg-developer
 # 
-# To change the domain 'wp-reference.dev':
+# To change the domain name 'wp-reference.dev':
 # 	- edit the domain in REFERENCE_HOME_URL below
 # 	- edit the domain in the vvv-hosts file
 # 	- edit the domain in the vvv-nginx.conf file
-# 	
+# 
 # Notes:
-# 	- Make sure you're online when provisioning for the first time.
-# 	- WordPress will be updated when provisioning, except when a version is set (for the /source-code WP install)	
+# 	- WordPress will be updated (if needed) when provisioning
+# 	- Manually deleting the /public or /source-code directory prior to provisioning will re-install WordPress
+# 	- If you want to parse older versions of wordpress it's best to manually delete the source-code dir before provisioning
 # 
 # =============================================================================
 
@@ -63,7 +75,7 @@ UPDATE_ASSETS=false
 # WordPress version (in the /source-code directory) to be parsed by WP Parser. Default: "latest"
 # 
 # Note: If not set to "latest" it's best to delete the /source-code directory manually prior to provisioning.
-#       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.		
+#       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.
 SOURCE_CODE_WP_VERSION="latest"
 
 
@@ -94,14 +106,14 @@ SOURCE_CODE_PATH="$CURRENT_PATH/source-code"
 WPCLI_COMMAND_FILE_PATH="$CURRENT_PATH/wp-cli-reference.php"
 
 
-echo -e "\nCommencing Setup $REFERENCE_HOME_URL"
+printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
 
 # =============================================================================
 # Create vvv-hosts file (if it doesn't exist)
 # =============================================================================
 
 if [[ ! -f $CURRENT_PATH/vvv-hosts ]]; then
-	echo "creating vvv-hosts file in $CURRENT_PATH"
+	printf "Creating vvv-hosts file in $CURRENT_PATH\n"
 	touch $CURRENT_PATH/vvv-hosts
 	printf "$REFERENCE_HOME_URL\n" >> $CURRENT_PATH/vvv-hosts
 fi
@@ -113,7 +125,7 @@ fi
 if [[ -d /srv/config/apache-config/sites ]]; then
 	if [[ ! -f /srv/config/apache-config/sites/$CURRENT_DIR.conf ]]; then
 		cd srv/config/apache-config/sites
-		echo "Creating $CURRENT_DIR.conf in /srv/config/apache-config/sites/... "
+		printf "Creating $CURRENT_DIR.conf in /srv/config/apache-config/sites/...\n"
 		sed -e "s/testserver\.com/$REFERENCE_HOME_URL/" \
 		-e "s/wordpress-local/$CURRENT_DIR\/public/" local-apache-example.conf-sample > $CURRENT_DIR.conf
 	fi
@@ -124,9 +136,35 @@ fi
 # Create database
 # =============================================================================
 
-echo "Creating database 'wordpress-reference' (if it does not exist)..."
+printf "Creating database 'wordpress-reference' if needed...\n"
 mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS \`wordpress-reference\`"
 mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+
+# =============================================================================
+# function to install wordpress
+# =============================================================================
+function install_wordpress {
+
+	wp_ref_path=$1
+	wp_ref_url=$2
+	drop_tables=$3
+
+	cd $wp_ref_path
+
+	if ! $(wp core is-installed --allow-root 2> /dev/null); then
+		printf "Installing $wp_ref_url in $wp_ref_path...\n"
+		wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
+	else
+		if [[ "$drop_tables" = true ]]; then
+			printf "Dropping all tables in 'wordpress-reference' database...\n"
+			wp db reset --yes --allow-root
+			printf "Installing $wp_ref_url in $wp_ref_path...\n"
+			wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
+		fi
+	fi
+
+	return
+}
 
 
 # =============================================================================
@@ -138,6 +176,9 @@ mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\
 # then we'll skip a few things further in provisioning rather than creating a
 # bunch of errors.
 # =============================================================================
+
+printf "Checking network connection...\n"
+
 ping_result="$(ping -c 2 8.8.4.4 2>&1)"
 if [[ $ping_result != *bytes?from* ]]; then
 	ping_result="$(ping -c 2 4.2.2.2 2>&1)"
@@ -150,92 +191,93 @@ else
 fi
 
 # =============================================================================
-# Install all the stuff if connected
+# Create dir for reference
+# =============================================================================
+instal_new=false
+if [[ ! -d $REFERENCE_SITE_PATH ]]; then
+	printf "Creating directory $REFERENCE_SITE_PATH...\n"
+	instal_new=true
+	mkdir $REFERENCE_SITE_PATH
+fi
+
+# =============================================================================
+# Install all the things if connected
 # =============================================================================
 if [[ "$CONNECTION" = true ]]; then
 
-	instal_new=false
-
 	# =============================================================================
-	# New install if directory doesn't exist
+	# download WordPress
 	# =============================================================================
-	if [[ ! -d $REFERENCE_SITE_PATH ]]; then
+	if [[ "$instal_new" = true ]]; then
 
-		instal_new=true
-
-		#install WordPress
-		mkdir $REFERENCE_SITE_PATH
 		cd $REFERENCE_SITE_PATH
 
-		echo "Downloading WordPress in $REFERENCE_SITE_PATH..."
+		printf "Downloading WordPress in $REFERENCE_SITE_PATH...\n"
 		wp core download --allow-root
 
-		echo "Creating wp-config in $REFERENCE_SITE_PATH..."
+		printf "Creating wp-config in $REFERENCE_SITE_PATH...\n"
 		wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --extra-php <<PHP
 define( 'WPORGPATH', "$REFERENCE_SITE_PATH/wp-content/themes/" );
 define ('WP_DEBUG', false);
 PHP
 	fi
 
-	# from now on $REFERENCE_SITE_PATH should exist
+	# =============================================================================
+	# Install WordPress
+	# =============================================================================
+	install_wordpress $REFERENCE_SITE_PATH $REFERENCE_HOME_URL $RESET_WORDPRESS
+
 	cd $REFERENCE_SITE_PATH
 
-	# start from scratch if $RESET_WORDPRESS is set
-	if [[ "$RESET_WORDPRESS" = true  ]]; then
-		echo "Dropping all tables in 'wordpress-reference' database..."
-		wp db reset --yes --allow-root
-	fi
-
-	echo "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH..."
-	wp core install --url=$REFERENCE_HOME_URL --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
+	REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
+	REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
 	# =============================================================================
-	# Install and Update (assets) plugin WP Parser and theme wpord-developer
+	# Install and update assets
 	# =============================================================================
 	if [[ "$instal_new" = true || "$UPDATE_ASSETS" = true ]]; then
 
-		cd $REFERENCE_SITE_PATH/wp-content/themes
-
-		echo "Downloading header.php and footer.php in $REFERENCE_SITE_PATH/wp-content/themes/..."
-		curl -s -O https://wordpress.org/header.php
-		printf "\n<?php wp_head(); ?>\n" >> header.php
-
-	    curl -s -O https://wordpress.org/footer.php 
-	    sed -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php > footer.php.tmp && mv footer.php.tmp footer.php
-		
-		#delete plugin wp-parser (if it exists)
-		if [[ -d $REFERENCE_SITE_PATH/wp-content/plugins/wp-parser ]]; then
-			cd $REFERENCE_SITE_PATH
+	    #delete plugin wp-parser (if it exists)
+	    if $(wp plugin is-installed wp-parser --allow-root); then
 			wp plugin delete wp-parser --allow-root 2>&1 >/dev/null
-		fi	
-		
-		echo 'Installing plugin wp-parser...'
-		cd $REFERENCE_SITE_PATH/wp-content/plugins
-		composer create-project rmccue/wp-parser:dev-master --no-dev	
+		fi
 
 		#delete theme wporg-developer (if it exists)
-		if [[ -d $REFERENCE_SITE_PATH/wp-content/themes/wporg-developer ]]; then
-			cd $REFERENCE_SITE_PATH
+		if $(wp theme is-installed wporg-developer --allow-root); then
 			default_theme=$(wp --require=$WPCLI_COMMAND_FILE_PATH wp-parser-reference theme get_default --allow-root)
 			wp theme activate $default_theme --allow-root
 			wp theme delete wporg-developer --allow-root 2>&1 >/dev/null
 		fi
-		
+
+		cd $REFERENCE_PLUGIN_PATH
+
+		printf 'Installing plugin wp-parser...\n'
+		composer create-project rmccue/wp-parser:dev-master --no-dev
+
+		cd $REFERENCE_THEME_PATH
+
 		#install theme wporg-developer
-		echo 'Installing theme wporg-developer...'
-		cd $REFERENCE_SITE_PATH/wp-content/themes
+		printf 'Installing theme wporg-developer...\n'
 		git clone https://github.com/Rarst/wporg-developer
-		cd $CURRENT_PATH
+
+		printf "Downloading header.php and footer.php in $REFERENCE_THEME_PATH...\n"
+		curl -s -O https://wordpress.org/header.php
+		printf "\n<?php wp_head(); ?>\n" >> header.php
+	    curl -s -O https://wordpress.org/footer.php
+	    sed -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php > footer.php.tmp && mv footer.php.tmp footer.php
 	fi
+
+	cd $REFERENCE_SITE_PATH
 
 	# =============================================================================
 	# Update wp-reference.dev website 
 	# =============================================================================
 	if [[ "$instal_new" = false ]]; then
-		echo "Updating $REFERENCE_HOME_URL..."
-		cd $REFERENCE_SITE_PATH
-		wp core update --allow-root
-		cd $CURRENT_PATH
+		if $(wp core is-installed --allow-root 2> /dev/null); then
+			cd $REFERENCE_SITE_PATH
+			printf "Updating WordPress in $REFERENCE_SITE_PATH\n"
+			wp core update --allow-root
+		fi
 	fi
 
 	# =============================================================================
@@ -244,134 +286,102 @@ PHP
 	if [[ ! -d $SOURCE_CODE_PATH ]]; then
 		#install WordPress in source code directory
 		mkdir $SOURCE_CODE_PATH
+
 		cd $SOURCE_CODE_PATH
-		echo "Downloading WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH..."
+
+		printf "Downloading WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH...\n"
 		if [[ $SOURCE_CODE_WP_VERSION = "latest" ]]; then
 			wp core download --allow-root
 		else
-			wp core download --version=$SOURCE_CODE_WP_VERSION --allow-root
+			wp core download --version=$SOURCE_CODE_WP_VERSION --force --allow-root
 		fi
-		wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --skip-check
-		cd $CURRENT_PATH
+
+		wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --skip-check --allow-root
 	else
-		# update or install WordPress in source code directory depending if version is set
 		cd $SOURCE_CODE_PATH
-		echo "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH"
+
+		printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
+
 		if [[ $SOURCE_CODE_WP_VERSION = "latest" ]]; then
-			wp core update --allow-root
+			wp core update --force --allow-root 
 		else
 			wp core update --version=$SOURCE_CODE_WP_VERSION --force --allow-root
 		fi
-
-		cd $CURRENT_PATH
 	fi
 
 else
-	# no internet connection
-	echo -e "\nNo network connection available, skipping downloading or updating WordPress Reference"
-
-	if [[ -d $REFERENCE_SITE_PATH ]]; then
-		cd $REFERENCE_SITE_PATH
-
-		if [[ "$RESET_WORDPRESS" = true  ]]; then
-			echo "Dropping all tables in 'wordpress-reference' database..."
-			wp db reset --yes --allow-root
-		fi
-
-		echo "installing $REFERENCE_HOME_URL... in $REFERENCE_SITE_PATH"
-		wp core install --url=$REFERENCE_HOME_URL --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
-		cd $CURRENT_PATH
+	# no network connection
+	printf "No network connection available, skipping downloading or updating WordPress Reference\n"
+	if [[ "$instal_new" = false ]]; then
+		install_wordpress $REFERENCE_SITE_PATH $REFERENCE_HOME_URL $RESET_WORDPRESS
 	fi
 fi
 
-# todo: delete wp-content and external libraries so they don't get parsed
-# 
-# delete wp-content in /source-code
-# if [[ -d $SOURCE_CODE_PATH/wp-content ]]; then
-# 		echo "deleting $SOURCE_CODE_PATH/wp-content..."
-# 		rm -rf $SOURCE_CODE_PATH/wp-content
-# fi
+cd $REFERENCE_SITE_PATH
 
-# =============================================================================
-# activate plugins and themes and set permalink structure
-# =============================================================================
-if [[ -d $REFERENCE_SITE_PATH ]]; then
-	
-	cd $REFERENCE_SITE_PATH
+if $(wp core is-installed --allow-root 2> /dev/null); then
 
-	#activate plugin wp-parser
-	echo 'Activating plugin wp-parser...'
-	wp plugin activate wp-parser --allow-root	
+	REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
+	REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
-	#activate theme
-	echo 'Activating theme wporg-developer...'
-	wp theme activate wporg-developer --allow-root
+	# =============================================================================
+	# activate plugin, theme and set permalink structure
+	# =============================================================================
+	if $(wp plugin is-installed wp-parser --allow-root 2> /dev/null); then
+		#activate plugin wp-parser
+		printf 'Activating plugin wp-parser...\n'
+		wp plugin activate wp-parser --allow-root
+	else
+		printf 'Notice: plugin WP Parser is not installed\n'
+	fi
+
+	if $(wp theme is-installed wporg-developer --allow-root 2> /dev/null); then
+		#activate theme
+		printf 'Activating theme wporg-developer...\n'
+		wp theme activate wporg-developer --allow-root
+	else
+		printf 'Notice: theme wporg-developer is not installed\n'
+	fi
 
 	#set permalinks
-	echo 'Set permalink structure...'
+	printf 'Set permalink structure to Post Name...\n'
 	wp rewrite structure '/%postname%/' --allow-root
-	wp rewrite flush --allow-root	
+	wp rewrite flush --allow-root
 
-	cd $CURRENT_PATH
-fi
+	# =============================================================================
+	# parse source code with WP Parser
+	# =============================================================================
+	if [[ -d $SOURCE_CODE_PATH ]]; then
 
-# =============================================================================
-# function to parse source code with WP Parser
-# =============================================================================
-provision_wp_parser_init() {
+		if [[ "$PARSE_SOURCE_CODE" = true ]]; then
+			cd $REFERENCE_PLUGIN_PATH
 
-	sc_path=$1
-	wp_path=$2
-	quick_mode=$3
+			printf "Proceed parsing source code directory $SOURCE_CODE_PATH...\n"
+			if [[ "$WP_PARSER_QUICK_MODE" = true  ]]; then
+				wp parser create $SOURCE_CODE_PATH --user=1 --quick --allow-root
+			else
+				wp parser create $SOURCE_CODE_PATH --user=1 --allow-root
+			fi
+		fi
 
-	#check if the WordPress directory for the reference exists
-	if [[ ! -d $wp_path ]]; then
-		echo "Skipped parsing, reference site directory doesn't exist: $wp_path"
-		return
-	fi
-
-	#check if the source code directory for WP Parser exists
-	if [[ ! -d $sc_path ]]; then
-		sc_path=$wp_path
-		echo -e "\nWarning: source code directory doesn't exist\n"
-		echo -e "New source code directory is  $sc_path\n"
-	fi
-
-	cd $wp_path/wp-content/plugins	
-
-	#import source code directory
-	echo "Proceed parsing source code directory $sc_path ..."
-	if [[ "$quick_mode" = true  ]]; then
-		wp parser create $sc_path --user=1 --quick --allow-root
 	else
-		wp parser create $sc_path --user=1 --allow-root
-	fi	
-	
-	return
-}
+		printf "Skipped parsing. Source code directory doesn't exist\n"
+	fi
 
-
-# =============================================================================
-# parse source code with WP Parser
-# =============================================================================
-if [[ "$PARSE_SOURCE_CODE" = true ]]; then
-	provision_wp_parser_init $SOURCE_CODE_PATH $REFERENCE_SITE_PATH $WP_PARSER_QUICK_MODE
-fi
-
-
-# =============================================================================
-# create pages if needed
-# =============================================================================
-if [[ -d $REFERENCE_SITE_PATH ]]; then
-	
+	# =============================================================================
+	# create pages if needed
+	# =============================================================================
 	if [[ -f $WPCLI_COMMAND_FILE_PATH ]]; then
 
 		cd $REFERENCE_SITE_PATH
-		echo 'Creating reference pages (if needed)...'
-		wp --require=$WPCLI_COMMAND_FILE_PATH wp-parser-reference pages create --allow-root
 
-		echo 'Flushing permalink structure...'
+		printf 'Creating reference pages (if needed)...\n'
+		wp --require=$WPCLI_COMMAND_FILE_PATH wp-parser-reference pages create --allow-root
+		printf 'Flushing permalink structure...\n'
 		wp rewrite flush --allow-root
 	fi
+else
+	printf "Skipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\n"
 fi
-echo -e "Done creating or updating $REFERENCE_HOME_URL!\n"
+
+printf "Finished creating or updating $REFERENCE_HOME_URL!\n"

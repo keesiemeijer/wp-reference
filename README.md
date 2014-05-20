@@ -3,22 +3,22 @@ wp-reference
 
 VVV auto site setup script to mirror the [WordPress code reference](https://developer.wordpress.org).
 
-This bash script makes it easy to parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser) and mirror the WordPress code reference using [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV).
+Parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser) and mirror the WordPress code reference using [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV).
 
-The auto site setup script follows the directions found in this [WordPress devhub page](https://make.wordpress.org/docs/handbook/projects/devhub/#setting-up-your-development-environment).
+This bash script follows these directions to [mirror the code reference](https://make.wordpress.org/docs/handbook/projects/devhub/#setting-up-your-development-environment).
 
-To get started:
 
+#### To get started:
 1. Setup [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV) (If you don't already have it)
 2. Clone this branch of this repo into the www directory of your Vagrant as www/wp-reference
 3. If your Vagrant is running, from the Vagrant directory run `vagrant halt`
-4. Followed by `vagrant up --provision`. The provisioning may take a while.
+4. Followed by `vagrant up --provision`. The provisioning may take a while as it will parse all WordPress files.
 
 You can now visit [http://wp-reference.dev/](http://wp-reference.dev/)
-<br/>Username: admin<br/>Password: password
 
-Note: If you don't have the vagrant plugin `vagrant-hostsupdater` installed you'll need to add the domain to your `hosts` file manually before you can visit wp-reference.dev.
+Note: If you don't have the vagrant plugin `vagrant-hostsupdater` installed you'll need to add the domain to your `hosts` file manually before you can visit [http://wp-reference.dev/](http://wp-reference.dev/).
 
+#### Provisioning
 When provisioning this script will:
 * if the directories /public and /source-code don't exist (inside the wp-reference directory)
   * Create directories /public and /source-code.
@@ -31,10 +31,16 @@ When provisioning this script will:
 * Create a static front page (if needed).
 * Create a reference page (if needed).
 
-After the first `vagrant up --provision` you can set it to not parse the source code again when provisioning. Set `PARSE_SOURCE_CODE` to false in vvv-init.sh file.
+#### Credentials
+* URL:      wp-reference.dev
+* Username: admin
+* Password: password
+* DB Name:  wordpress-reference
+
+#### Variables
+After the first `vagrant up --provision` you can set it to not parse the source code again when provisioning. Just set `PARSE_SOURCE_CODE` to false in the vvv-init.sh file.
 
     PARSE_SOURCE_CODE=false
-
 
 Other variables you can set in the vvv-init.sh file.
 
