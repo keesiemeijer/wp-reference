@@ -252,7 +252,11 @@ PHP
 		cd $REFERENCE_PLUGIN_PATH
 
 		printf 'Installing plugin wp-parser...\n'
-		composer create-project rmccue/wp-parser:dev-master --no-dev
+		git clone https://github.com/rmccue/WP-Parser.git wp-parser
+
+		printf 'Installing wp-parser dependencies'
+		cd wp-parser
+		composer install
 
 		cd $REFERENCE_THEME_PATH
 
