@@ -420,20 +420,10 @@ PHP
 	printf "Finished Setup $REFERENCE_HOME_URL!\n"
 }
 
-	# =============================================================================
-	# create pages if needed
-	# =============================================================================
-	if [[ -f $WPCLI_COMMAND_FILE_PATH ]]; then
+printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
 
-		cd $REFERENCE_SITE_PATH
+# create vvv-hosts file or .conf file if it's an Apache box.
+create_files
 
-		printf 'Creating reference pages (if needed)...\n'
-		wp --require=$WPCLI_COMMAND_FILE_PATH wp-parser-reference pages create --allow-root
-		printf 'Flushing permalink structure...\n'
-		wp rewrite flush --allow-root
-	fi
-else
-	printf "Skipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\n"
-fi
-
-printf "Finished creating or updating $REFERENCE_HOME_URL!\n"
+# create reference
+setup_reference
