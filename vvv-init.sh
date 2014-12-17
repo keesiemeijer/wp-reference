@@ -61,16 +61,16 @@
 readonly REFERENCE_HOME_URL="wp-reference.dev"
 
 # Parse the source code with WP Parser when provisioning.
-readonly PARSE_SOURCE_CODE=false
+readonly PARSE_SOURCE_CODE=true
 
 # If set to true the --quick subcommand is added to the "wp parser" command. Default: false
-readonly WP_PARSER_QUICK_MODE=true
+readonly WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP). Default: false
 readonly RESET_WORDPRESS=false
 
 # Update the plugin wp-parser and theme wporg-developer when provisioning. Default: false
-readonly UPDATE_ASSETS=true
+readonly UPDATE_ASSETS=false
 
 # WordPress version (in the /source-code directory) to be parsed by WP Parser. Default: "latest"
 # 
