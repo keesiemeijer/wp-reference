@@ -106,30 +106,21 @@ readonly SOURCE_CODE_PATH="$CURRENT_PATH/source-code"
 readonly WPCLI_COMMANDS_FILE="$CURRENT_PATH/wp-cli-reference.php"
 
 
-printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
-
 # =============================================================================
-# Create vvv-hosts file (if it doesn't exist)
+# Functions
 # =============================================================================
+function is_file() {
+    local file=$1
 
-if [[ ! -f $CURRENT_PATH/vvv-hosts ]]; then
-	printf "Creating vvv-hosts file in $CURRENT_PATH\n"
-	touch $CURRENT_PATH/vvv-hosts
-	printf "$REFERENCE_HOME_URL\n" >> $CURRENT_PATH/vvv-hosts
-fi
+    [[ -f $file ]]
+}
 
-# =============================================================================
-# Create .conf file for Apache (if it doesn't exist)
-# =============================================================================
 
-if [[ -d /srv/config/apache-config/sites ]]; then
-	if [[ ! -f /srv/config/apache-config/sites/$CURRENT_DIR.conf ]]; then
-		cd srv/config/apache-config/sites
-		printf "Creating $CURRENT_DIR.conf in /srv/config/apache-config/sites/...\n"
-		sed -e "s/testserver\.com/$REFERENCE_HOME_URL/" \
-		-e "s/wordpress-local/$CURRENT_DIR\/public/" local-apache-example.conf-sample > $CURRENT_DIR.conf
-	fi
-fi
+function is_dir() {
+    local dir=$1
+
+    [[ -d $dir ]]
+}
 
 
 # =============================================================================
