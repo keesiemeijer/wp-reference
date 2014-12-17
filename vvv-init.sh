@@ -58,25 +58,25 @@
 # Domain name
 #
 # Note: If edited, you'll need to edit it in the vvv-hosts and the vvv-nginx.conf files as well.
-REFERENCE_HOME_URL="wp-reference.dev"
+readonly REFERENCE_HOME_URL="wp-reference.dev"
 
 # Parse the source code with WP Parser when provisioning.
-PARSE_SOURCE_CODE=true
+readonly PARSE_SOURCE_CODE=false
 
 # If set to true the --quick subcommand is added to the "wp parser" command. Default: false
-WP_PARSER_QUICK_MODE=false
+readonly WP_PARSER_QUICK_MODE=true
 
 # Delete all tables in the database when provisioning (re-installs WP). Default: false
-RESET_WORDPRESS=false
+readonly RESET_WORDPRESS=false
 
 # Update the plugin wp-parser and theme wporg-developer when provisioning. Default: false
-UPDATE_ASSETS=false
+readonly UPDATE_ASSETS=true
 
 # WordPress version (in the /source-code directory) to be parsed by WP Parser. Default: "latest"
 # 
 # Note: If not set to "latest" it's best to delete the /source-code directory manually prior to provisioning.
 #       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.
-SOURCE_CODE_WP_VERSION="latest"
+readonly SOURCE_CODE_WP_VERSION="latest"
 
 
 # =============================================================================
