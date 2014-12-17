@@ -91,19 +91,19 @@ readonly SOURCE_CODE_WP_VERSION="latest"
 # =============================================================================
 
 # current path
-CURRENT_PATH=`pwd`
+readonly CURRENT_PATH=`pwd`
 
 # DocumentRoot dir in .conf file (if server is Apache)
-CURRENT_DIR="${PWD##*/}"
+readonly CURRENT_DIR="${PWD##*/}"
 
 # path to the WordPress install for the developer reference website
-REFERENCE_SITE_PATH="$CURRENT_PATH/public"
+readonly REFERENCE_SITE_PATH="$CURRENT_PATH/public"
 
 # source code directory to be parsed by WP Parser
-SOURCE_CODE_PATH="$CURRENT_PATH/source-code"
+readonly SOURCE_CODE_PATH="$CURRENT_PATH/source-code"
 
 # WP-CLI command file. Creates pages and gets the default theme for a WordPress install
-WPCLI_COMMAND_FILE_PATH="$CURRENT_PATH/wp-cli-reference.php"
+readonly WPCLI_COMMANDS_FILE="$CURRENT_PATH/wp-cli-reference.php"
 
 
 printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
