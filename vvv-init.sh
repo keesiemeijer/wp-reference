@@ -110,16 +110,16 @@ readonly WPCLI_COMMANDS_FILE="$CURRENT_PATH/wp-cli-reference.php"
 # Functions
 # =============================================================================
 function is_file() {
-    local file=$1
+	local file=$1
 
-    [[ -f $file ]]
+	[[ -f $file ]]
 }
 
 
 function is_dir() {
-    local dir=$1
+	local dir=$1
 
-    [[ -d $dir ]]
+	[[ -d $dir ]]
 }
 
 
@@ -262,8 +262,8 @@ PHP
 			# =============================================================================
 			if [[ "$instal_new" = true || "$UPDATE_ASSETS" = true ]]; then
 		
-		    	#delete plugin wp-parser (if it exists)
-		    	if $(wp plugin is-installed wp-parser --allow-root); then
+				#delete plugin wp-parser (if it exists)
+				if $(wp plugin is-installed wp-parser --allow-root); then
 					wp plugin delete wp-parser --allow-root 2>&1 >/dev/null
 				fi
 		
@@ -294,8 +294,8 @@ PHP
 				printf "Downloading and editing header.php and footer.php in $REFERENCE_THEME_PATH...\n"
 				curl -s -O https://wordpress.org/header.php
 				printf "\n<?php wp_head(); ?>\n" >> header.php
-		    	curl -s -O https://wordpress.org/footer.php
-		    	sed -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php > footer.php.tmp && mv footer.php.tmp footer.php
+				curl -s -O https://wordpress.org/footer.php
+				sed -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php > footer.php.tmp && mv footer.php.tmp footer.php
 			fi
 		
 			cd "$REFERENCE_SITE_PATH"
