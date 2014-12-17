@@ -123,31 +123,29 @@ function is_dir() {
 }
 
 
-# =============================================================================
-# Create database
-# =============================================================================
+function wp_core_is_installed(){
+	$(wp core is-installed --allow-root 2> /dev/null)
+}
 
-printf "Creating database 'wordpress-reference' if needed...\n"
-mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS \`wordpress-reference\`"
-mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
 
-# =============================================================================
-# function to install wordpress
-# =============================================================================
-function install_wordpress {
+function install_WordPress {
 
-	wp_ref_path=$1
-	wp_ref_url=$2
-	drop_tables=$3
+	local wp_ref_path=$1
+	local wp_ref_url=$2
+	local drop_tables=$3
+
+	if ! is_dir $wp_ref_path; then
+		return
+	fi
 
 	cd $wp_ref_path
 
-	if ! $(wp core is-installed --allow-root 2> /dev/null); then
+	if ! wp_core_is_installed; then
 		printf "Installing $wp_ref_url in $wp_ref_path...\n"
 		wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 	else
 		if [[ "$drop_tables" = true ]]; then
-			printf "Dropping all tables in 'wordpress-reference' database...\n"
+			printf "Dropping tables in 'wordpress-reference' database...\n"
 			wp db reset --yes --allow-root
 			printf "Installing $wp_ref_url in $wp_ref_path...\n"
 			wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
@@ -158,70 +156,33 @@ function install_wordpress {
 }
 
 
-# =============================================================================
-# Connection
-#
-# Capture a basic ping result to Google's primary DNS server to determine if
-# outside access is available to us. If this does not reply after 2 attempts,
-# we try one of Level3's DNS servers as well. If neither IP replies to a ping,
-# then we'll skip a few things further in provisioning rather than creating a
-# bunch of errors.
-# =============================================================================
-
-printf "Checking network connection...\n"
-
-ping_result="$(ping -c 2 8.8.4.4 2>&1)"
-if [[ $ping_result != *bytes?from* ]]; then
-	ping_result="$(ping -c 2 4.2.2.2 2>&1)"
-fi
-
-if [[ $ping_result == *bytes?from* ]]; then	
-	CONNECTION=true
-else
-	CONNECTION=false
-fi
-
-# =============================================================================
-# Create dir for reference
-# =============================================================================
-instal_new=false
-if [[ ! -d $REFERENCE_SITE_PATH ]]; then
-	printf "Creating directory $REFERENCE_SITE_PATH...\n"
-	instal_new=true
-	mkdir $REFERENCE_SITE_PATH
-fi
-
-# =============================================================================
-# Install all the things if connected
-# =============================================================================
-if [[ "$CONNECTION" = true ]]; then
+function create_files {
 
 	# =============================================================================
-	# download WordPress
+	# Create vvv-hosts file (if it doesn't exist)
 	# =============================================================================
-	if [[ "$instal_new" = true ]]; then
-
-		cd $REFERENCE_SITE_PATH
-
-		printf "Downloading WordPress in $REFERENCE_SITE_PATH...\n"
-		wp core download --allow-root
-
-		printf "Creating wp-config in $REFERENCE_SITE_PATH...\n"
-		wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --extra-php <<PHP
-define( 'WPORGPATH', "$REFERENCE_SITE_PATH/wp-content/themes/" );
-define ('WP_DEBUG', false);
-PHP
+	
+	if ! is_file "$CURRENT_PATH/vvv-hosts"; then
+		printf "Creating vvv-hosts file in $CURRENT_PATH\n"
+		touch "$CURRENT_PATH/vvv-hosts"
+		printf "$REFERENCE_HOME_URL\n" >> "$CURRENT_PATH/vvv-hosts"
+	fi
+	
+	# =============================================================================
+	# Create .conf file for Apache (if it doesn't exist)
+	# =============================================================================
+	
+	if is_dir "/srv/config/apache-config/sites"; then
+		if ! is_file "/srv/config/apache-config/sites/$CURRENT_DIR.conf"; then
+			cd srv/config/apache-config/sites
+			printf "Creating $CURRENT_DIR.conf in /srv/config/apache-config/sites/...\n"
+			sed -e "s/testserver\.com/$REFERENCE_HOME_URL/" \
+			-e "s/wordpress-local/$CURRENT_DIR\/public/" local-apache-example.conf-sample > "$CURRENT_DIR.conf"
+		fi
 	fi
 
-	# =============================================================================
-	# Install WordPress
-	# =============================================================================
-	install_wordpress $REFERENCE_SITE_PATH $REFERENCE_HOME_URL $RESET_WORDPRESS
+}
 
-	cd $REFERENCE_SITE_PATH
-
-	REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
-	REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
 	# =============================================================================
 	# Install and update assets
