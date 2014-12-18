@@ -78,6 +78,9 @@ readonly UPDATE_ASSETS=false
 #       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.
 readonly SOURCE_CODE_WP_VERSION="latest"
 
+# Exclude external libraries when parsing.
+readonly EXCLUDE_WP_EXTERNAL_LIBS=true
+
 
 # =============================================================================
 # 
@@ -111,14 +114,12 @@ readonly WPCLI_COMMANDS_FILE="$CURRENT_PATH/wp-cli-reference.php"
 # =============================================================================
 function is_file() {
 	local file=$1
-
 	[[ -f $file ]]
 }
 
 
 function is_dir() {
 	local dir=$1
-
 	[[ -d $dir ]]
 }
 
@@ -130,25 +131,19 @@ function wp_core_is_installed(){
 
 function install_WordPress {
 
-	local wp_ref_path=$1
-	local wp_ref_url=$2
-	local drop_tables=$3
-
-	if ! is_dir $wp_ref_path; then
-		return
-	fi
-
-	cd $wp_ref_path
+	cd "$REFERENCE_SITE_PATH"
 
 	if ! wp_core_is_installed; then
-		printf "Installing $wp_ref_url in $wp_ref_path...\n"
-		wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
+		# tables don't exist
+		printf "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH...\n"
+		wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 	else
-		if [[ "$drop_tables" = true ]]; then
+		#tables exist
+		if [[ "$RESET_WORDPRESS" = true ]]; then
 			printf "Dropping tables in 'wordpress-reference' database...\n"
 			wp db reset --yes --allow-root
-			printf "Installing $wp_ref_url in $wp_ref_path...\n"
-			wp core install --url=$wp_ref_url --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
+			printf "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH...\n"
+			wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 		fi
 	fi
 
@@ -187,6 +182,9 @@ function create_files {
 # Main function for reference creation
 # =============================================================================
 function setup_reference {
+
+	local REFERENCE_PLUGIN_PATH
+	local REFERENCE_THEME_PATH
 	
 	printf "Checking network connection...\n"
 
@@ -221,7 +219,7 @@ function setup_reference {
 	local instal_new=false
 	if ! is_dir "$REFERENCE_SITE_PATH"; then
 		printf "Creating directory $REFERENCE_SITE_PATH...\n"
-		local instal_new=true
+		instal_new=true
 		mkdir "$REFERENCE_SITE_PATH"
 	fi
 	
@@ -250,12 +248,14 @@ PHP
 		# =============================================================================
 		# Install WordPress
 		# =============================================================================
-		install_WordPress "$REFERENCE_SITE_PATH" "$REFERENCE_HOME_URL" "$RESET_WORDPRESS"
+		install_WordPress
 	
 		if wp_core_is_installed; then
 		
-			local REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
-			local REFERENCE_THEME_PATH=$(wp theme path --allow-root)
+			REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
+			REFERENCE_THEME_PATH=$(wp theme path --allow-root)
+
+
 		
 			# =============================================================================
 			# Install and update assets
@@ -301,13 +301,11 @@ PHP
 			cd "$REFERENCE_SITE_PATH"
 		
 			# =============================================================================
-			# Update wp-reference.dev website 
+			# Update wp-reference.dev website
 			# =============================================================================
 			if [[ "$instal_new" = false ]]; then
-				if wp_core_is_installed; then
 					printf "Updating WordPress in $REFERENCE_SITE_PATH\n"
 					wp core update --allow-root
-				fi
 			fi
 		fi
 	
@@ -326,11 +324,13 @@ PHP
 			else
 				wp core download --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
 			fi
-	
-			wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --skip-check --allow-root
+
+			# Create wp-config without checking if database exist.
+			wp core config --dbname="wordpress-source-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --skip-check --allow-root
 		else
+
 			cd "$SOURCE_CODE_PATH"
-	
+
 			printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
 	
 			if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
@@ -345,7 +345,7 @@ PHP
 		printf "Skipped installing/updating. No network connection found\n"
 		if [[ "$instal_new" = false ]]; then
 			# maybe reset and install WordPress again 
-			install_WordPress "$REFERENCE_SITE_PATH" "$REFERENCE_HOME_URL" "$RESET_WORDPRESS"
+			install_WordPress
 		fi
 	fi
 	
@@ -353,11 +353,31 @@ PHP
 	
 	if wp_core_is_installed; then
 	
-		local REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
-		local REFERENCE_THEME_PATH=$(wp theme path --allow-root)
+		REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
+		REFERENCE_THEME_PATH=$(wp theme path --allow-root)
+
+		# =============================================================================
+		# delete exclude-wp-external-libs.php before parsing
+		# =============================================================================
+		if $(wp plugin is-installed exclude-wp-external-libs --allow-root); then
+			wp plugin delete exclude-wp-external-libs --allow-root 2>&1 >/dev/null
+		fi
+
+		# =============================================================================
+		# activate exclude-wp-external-libs.php if $EXCLUDE_WP_EXTERNAL_LIBS is true
+		# =============================================================================
+		if [[ "$EXCLUDE_WP_EXTERNAL_LIBS" = true ]]; then
+			if is_file "$CURRENT_PATH/exclude-wp-external-libs.php"; then
+				cp "$CURRENT_PATH/exclude-wp-external-libs.php" "$REFERENCE_PLUGIN_PATH/exclude-wp-external-libs.php"
+				if $(wp plugin is-installed exclude-wp-external-libs --allow-root 2> /dev/null); then
+					printf 'Activating plugin exclude-wp-external-libs...\n'
+					wp plugin activate exclude-wp-external-libs --allow-root
+				fi
+			fi
+		fi
 	
 		# =============================================================================
-		# activate plugin, theme and set permalink structure
+		# activate wp-parser and wporg-developer and set permalink structure
 		# =============================================================================
 		if $(wp plugin is-installed wp-parser --allow-root 2> /dev/null); then
 			#activate plugin wp-parser
@@ -375,8 +395,10 @@ PHP
 			printf 'Notice: theme wporg-developer is not installed\n'
 		fi
 	
-		#set permalinks
-		printf 'Set permalink structure to Post Name...\n'
+		# =============================================================================
+		# Set permalink structure
+		# =============================================================================
+		printf 'Set permalink structure to postname...\n'
 		wp rewrite structure '/%postname%/' --allow-root
 		wp rewrite flush --allow-root
 	
@@ -414,6 +436,15 @@ PHP
 		fi
 	else
 		printf "Skipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\n"
+	fi
+
+	cd "$REFERENCE_SITE_PATH"
+
+	# =============================================================================
+	# delete exclude-wp-external-libs.php from /wp-content/plugins/ after parsing
+	# =============================================================================
+	if $(wp plugin is-installed exclude-wp-external-libs --allow-root); then
+		wp plugin delete exclude-wp-external-libs --allow-root 2>&1 >/dev/null
 	fi
 	
 	cd "$CURRENT_PATH"
