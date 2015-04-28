@@ -289,7 +289,7 @@ PHP
 		
 				#install theme wporg-developer
 				printf 'Installing theme wporg-developer...\n'
-				git clone https://github.com/Rarst/wporg-developer
+				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/themes/pub/wporg-developer/
 		
 				printf "Downloading and editing header.php and footer.php in $REFERENCE_THEME_PATH...\n"
 				curl -s -O https://wordpress.org/header.php
