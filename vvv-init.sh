@@ -351,11 +351,22 @@ PHP
 			cd "$SOURCE_CODE_PATH"
 
 			printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
+
+			# install source to update
+			if ! wp_core_is_installed; then
+				mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS \`wordpress-source-reference\`"
+				mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-source-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+
+				wp core install --url="wp-source.dev" --title="Source" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root 2>&1 >/dev/null
+			fi
+
 			if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
 				wp core update --force --allow-root 
 			else
 				wp core update --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
 			fi
+
+			wp db drop --yes --allow-root 2>&1 >/dev/null
 		fi
 
 	else
