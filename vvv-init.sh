@@ -399,8 +399,12 @@ PHP
 			if is_file "$CURRENT_PATH/exclude-wp-external-libs.php"; then
 				cp "$CURRENT_PATH/exclude-wp-external-libs.php" "$REFERENCE_PLUGIN_PATH/exclude-wp-external-libs.php"
 				if $(wp plugin is-installed exclude-wp-external-libs --allow-root 2> /dev/null); then
-					printf 'Activating plugin exclude-wp-external-libs...\n'
-					wp plugin activate exclude-wp-external-libs --allow-root
+					if [ $(is_activated exclude-wp-external-libs plugin) != 'active' ]; then
+						printf 'Activating plugin exclude-wp-external-libs...\n'
+						wp plugin activate exclude-wp-external-libs --allow-root
+					else
+						printf 'Plugin exclude-wp-external-libs is activated...\n'
+					fi
 				fi
 			fi
 		fi
@@ -410,16 +414,24 @@ PHP
 		# =============================================================================
 		if $(wp plugin is-installed wp-parser --allow-root 2> /dev/null); then
 			#activate plugin wp-parser
-			printf 'Activating plugin wp-parser...\n'
-			wp plugin activate wp-parser --allow-root
+			if [ $(is_activated wp-parser plugin) != 'active' ]; then
+				printf 'Activating plugin wp-parser...\n'
+				wp plugin activate wp-parser --allow-root
+			else
+				printf 'Plugin wp-parser is activated...\n'
+			fi
 		else
 			printf 'Notice: plugin WP Parser is not installed\n'
 		fi
 
 		if $(wp theme is-installed wporg-developer --allow-root 2> /dev/null); then
 			#activate theme
-			printf 'Activating theme wporg-developer...\n'
-			wp theme activate wporg-developer --allow-root
+			if [ $(is_activated wporg-developer theme) != 'active' ]; then
+				printf 'Activating theme wporg-developer...\n'
+				wp theme activate wporg-developer --allow-root
+			else
+				printf 'Theme wporg-developer is activated...\n'
+			fi
 		else
 			printf 'Notice: theme wporg-developer is not installed\n'
 		fi
