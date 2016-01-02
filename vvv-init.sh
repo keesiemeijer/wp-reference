@@ -128,6 +128,28 @@ function wp_core_is_installed(){
 	$(wp core is-installed --allow-root 2> /dev/null)
 }
 
+function is_activated(){
+	local name=$1
+	local wptype=$2
+
+	local status='inactive'
+	if [[ $wptype == "plugin" ]]; then
+		local activated=$(wp plugin list --status=active --fields=name --format=csv --allow-root)
+	fi
+
+	if [[ $wptype == "theme" ]]; then
+		local activated=$(wp theme list --status=active --fields=name --format=csv --allow-root)
+	fi
+
+	while read -r line; do
+		if [[ $line == $name ]]; then
+			status='active'
+		fi
+	done <<< "$activated"
+
+	echo $status;
+}
+
 
 function install_WordPress {
 
