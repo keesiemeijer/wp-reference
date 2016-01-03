@@ -29,6 +29,10 @@
 # 	Password: password
 # 	DB Name:  wordpress-reference
 # 
+# MySQL Root
+# 	User: root
+# 	pass: root
+# 
 # Resources
 # 	https://github.com/keesiemeijer/wp-reference
 # 	https://github.com/Varying-Vagrant-Vagrants/VVV
@@ -57,28 +61,38 @@
 
 # Domain name
 #
-# Note: If edited, you'll need to edit it in the vvv-hosts and the vvv-nginx.conf files as well.
+# Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
+# Default: "wp-reference.dev"
 readonly REFERENCE_HOME_URL="wp-reference.dev"
 
 # Parse the source code with WP Parser when provisioning.
+# Default: true
 readonly PARSE_SOURCE_CODE=true
 
-# If set to true the --quick subcommand is added to the "wp parser" command. Default: false
+# If set to true the --quick subcommand is added to the "wp parser" command. 
+# Default: false
 readonly WP_PARSER_QUICK_MODE=false
 
-# Delete all tables in the database when provisioning (re-installs WP). Default: false
+# Delete all tables in the database when provisioning (re-installs WP).
+# Default: false
 readonly RESET_WORDPRESS=false
 
-# Update the plugin wp-parser and theme wporg-developer when provisioning. Default: false
+# Update the plugin wp-parser and theme wporg-developer when provisioning.
+# Default: false
 readonly UPDATE_ASSETS=false
 
-# WordPress version (in the /source-code directory) to be parsed by WP Parser. Default: "latest"
+# The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
 # 
-# Note: If not set to "latest" it's best to delete the /source-code directory manually prior to provisioning.
-#       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.
+# Note:
+# 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
+# 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
+# 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
+# 
+# Default: "latest"
 readonly SOURCE_CODE_WP_VERSION="latest"
 
 # Exclude external libraries when parsing.
+# Default: true
 readonly EXCLUDE_WP_EXTERNAL_LIBS=true
 
 
@@ -87,6 +101,15 @@ readonly EXCLUDE_WP_EXTERNAL_LIBS=true
 # That's all, stop editing! Happy parsing.
 # 
 # =============================================================================
+
+
+# =============================================================================
+# Root mysql credentials
+# =============================================================================
+
+readonly MYSQL_USER='root'
+
+readonly MYSQL_PASSWORD='root'
 
 
 # =============================================================================
@@ -220,7 +243,7 @@ function setup_reference {
 		printf "Network connection detected...\n"
 		local ping_result="Connected"
 	else
-		printf "Network connection not detected. Unable to reach google.com...\n"
+		printf "\e[31mNo network connection detected. Unable to reach google.com...\033[0m\n"
 		local ping_result="Not Connected"
 	fi
 
@@ -230,8 +253,8 @@ function setup_reference {
 	
 	# check if database exists
 	printf "Creating database 'wordpress-reference' (if it doesn't exist yet)...\n"
-	mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS \`wordpress-reference\`"
-	mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`wordpress-reference\`"
+	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
 
 
 	# =============================================================================
@@ -297,9 +320,9 @@ PHP
 
 				cd "$REFERENCE_PLUGIN_PATH"
 
-				printf 'Installing plugin wp-parser...\n'
+				printf "Installing plugin wp-parser...\n"
 				git clone https://github.com/WordPress/phpdoc-parser.git wp-parser
-				printf 'Installing wp-parser dependencies...\n'
+				printf "Installing wp-parser dependencies...\n"
 				cd wp-parser
 				composer install
 				composer dump-autoload
@@ -307,7 +330,7 @@ PHP
 				cd "$REFERENCE_THEME_PATH"
 
 				#install theme wporg-developer
-				printf 'Installing theme wporg-developer...\n'
+				printf "Installing theme wporg-developer...\n"
 				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/themes/pub/wporg-developer/
 
 				printf "Downloading and editing header.php and footer.php in $REFERENCE_THEME_PATH...\n"
@@ -332,41 +355,55 @@ PHP
 		# Install or Update WP in source code directory
 		# =============================================================================
 		if ! is_dir "$SOURCE_CODE_PATH"; then
+
 			#install WordPress in source code directory
 			mkdir "$SOURCE_CODE_PATH"
 
-			cd "$SOURCE_CODE_PATH"
+			if [[ "$SOURCE_CODE_WP_VERSION" != "" ]]; then
 
-			printf "Downloading WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH...\n"
-			if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
-				wp core download --allow-root
-			else
-				wp core download --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
+				cd "$SOURCE_CODE_PATH"
+
+				printf "Downloading WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH...\n"
+				if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
+					wp core download --allow-root
+				else
+					wp core download --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
+				fi
+
+				# Create wp-config without checking if database exist.
+				wp core config --dbname="wordpress-source-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --skip-check --allow-root
 			fi
-
-			# Create wp-config without checking if database exist.
-			wp core config --dbname="wordpress-source-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --skip-check --allow-root
 		else
 
-			cd "$SOURCE_CODE_PATH"
+			if [[ "$SOURCE_CODE_WP_VERSION" != "" ]]; then
 
-			printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
+				cd "$SOURCE_CODE_PATH"
 
-			# install source to update
-			if ! wp_core_is_installed; then
-				mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS \`wordpress-source-reference\`"
-				mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON \`wordpress-source-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+				printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
 
-				wp core install --url="wp-source.dev" --title="Source" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root 2>&1 >/dev/null
+				# Install the source-code WordPress install to be able to update
+				if ! wp_core_is_installed && is_file "$SOURCE_CODE_PATH/wp-config.php"; then
+					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`wordpress-source-reference\`"
+					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`wordpress-source-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+
+					wp core install --url="wp-source.dev" --title="Source" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root 2>&1 >/dev/null
+				else
+					printf "\e[31mNo WordPress install found in $SOURCE_CODE_PATH\n"
+					printf "To re-install WordPress delete the directory $SOURCE_CODE_PATH\033[0m\n"
+				fi
+
+				if wp_core_is_installed; then
+					if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
+						wp core update --force --allow-root
+					else
+						wp core update --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
+					fi
+
+				fi
+
+				# Delete database as it's only needed for updating WordPress
+				$(wp db drop --yes --quiet --allow-root 2> /dev/null)
 			fi
-
-			if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
-				wp core update --force --allow-root 
-			else
-				wp core update --version="$SOURCE_CODE_WP_VERSION" --force --allow-root
-			fi
-
-			wp db drop --yes --allow-root 2>&1 >/dev/null
 		fi
 
 	else
@@ -400,10 +437,10 @@ PHP
 				cp "$CURRENT_PATH/exclude-wp-external-libs.php" "$REFERENCE_PLUGIN_PATH/exclude-wp-external-libs.php"
 				if $(wp plugin is-installed exclude-wp-external-libs --allow-root 2> /dev/null); then
 					if [ $(is_activated exclude-wp-external-libs plugin) != 'active' ]; then
-						printf 'Activating plugin exclude-wp-external-libs...\n'
+						printf "Activating plugin exclude-wp-external-libs...\n"
 						wp plugin activate exclude-wp-external-libs --allow-root
 					else
-						printf 'Plugin exclude-wp-external-libs is activated...\n'
+						printf "Plugin exclude-wp-external-libs is activated...\n"
 					fi
 				fi
 			fi
@@ -415,31 +452,31 @@ PHP
 		if $(wp plugin is-installed wp-parser --allow-root 2> /dev/null); then
 			#activate plugin wp-parser
 			if [ $(is_activated wp-parser plugin) != 'active' ]; then
-				printf 'Activating plugin wp-parser...\n'
+				printf "Activating plugin wp-parser...\n"
 				wp plugin activate wp-parser --allow-root
 			else
-				printf 'Plugin wp-parser is activated...\n'
+				printf "Plugin wp-parser is activated...\n"
 			fi
 		else
-			printf 'Notice: plugin WP Parser is not installed\n'
+			printf "\033[0m\nNotice: plugin WP Parser is not installed\033[0m\n"
 		fi
 
 		if $(wp theme is-installed wporg-developer --allow-root 2> /dev/null); then
 			#activate theme
 			if [ $(is_activated wporg-developer theme) != 'active' ]; then
-				printf 'Activating theme wporg-developer...\n'
+				printf "Activating theme wporg-developer...\n"
 				wp theme activate wporg-developer --allow-root
 			else
-				printf 'Theme wporg-developer is activated...\n'
+				printf "Theme wporg-developer is activated...\n"
 			fi
 		else
-			printf 'Notice: theme wporg-developer is not installed\n'
+			printf "\e[31mNotice: theme wporg-developer is not installed\033[0m\n"
 		fi
 
 		# =============================================================================
 		# Set permalink structure
 		# =============================================================================
-		printf 'Set permalink structure to postname...\n'
+		printf "Set permalink structure to postname...\n"
 		wp rewrite structure '/%postname%/' --allow-root
 		wp rewrite flush --allow-root
 
@@ -460,7 +497,7 @@ PHP
 			fi
 
 		else
-			printf "Skipped parsing. Source code directory doesn't exist\n"
+			printf "\e[31mSkipped parsing. Source code directory doesn't exist\033[0m\n"
 		fi
 
 		# =============================================================================
@@ -470,13 +507,13 @@ PHP
 
 			cd "$REFERENCE_SITE_PATH"
 
-			printf 'Creating reference pages (if needed)...\n'
+			printf "Creating reference pages (if needed)...\n"
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference pages create --allow-root
-			printf 'Flushing permalink structure...\n'
+			printf "Flushing permalink structure...\n"
 			wp rewrite flush --allow-root
 		fi
 	else
-		printf "Skipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\n"
+		printf "\e[31mSkipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\033[0m\n"
 	fi
 
 	cd "$REFERENCE_SITE_PATH"
