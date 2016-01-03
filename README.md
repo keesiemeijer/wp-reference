@@ -36,6 +36,12 @@ When provisioning this script will:
 * Username: admin
 * Password: password
 * DB Name:  wordpress-reference
+* DB User:  wp
+* DB Pass:  wp
+
+#### MySQL Root
+* User: root
+* Pass: root
 
 #### Variables
 After the first `vagrant up --provision` you can set it to not parse the source code again when provisioning. Just set `PARSE_SOURCE_CODE` to false in the vvv-init.sh file.
@@ -53,24 +59,37 @@ Other variables you can set in the vvv-init.sh file.
 
 # Domain name
 #
-# Note: If edited, you'll need to edit it in the vvv-hosts and the vvv-nginx.conf files as well.
-REFERENCE_HOME_URL="wp-reference.dev"
+# Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
+# Default: "wp-reference.dev"
+readonly REFERENCE_HOME_URL="wp-reference.dev"
 
 # Parse the source code with WP Parser when provisioning.
-PARSE_SOURCE_CODE=true
+# Default: true
+readonly PARSE_SOURCE_CODE=true
 
-# If set to true the --quick subcommand is added to the "wp parser" command. Default: false
-WP_PARSER_QUICK_MODE=false
+# If set to true the --quick subcommand is added to the "wp parser" command.
+# Default: false
+readonly WP_PARSER_QUICK_MODE=false
 
-# Delete all tables in the database when provisioning (re-installs WP). Default: false
-RESET_WORDPRESS=false
+# Delete all tables in the database when provisioning (re-installs WP).
+# Default: false
+readonly RESET_WORDPRESS=false
 
-# Update the plugin wp-parser and theme wporg-developer when provisioning. Default: false
-UPDATE_ASSETS=false
+# Update the plugin wp-parser and theme wporg-developer when provisioning.
+# Default: false
+readonly UPDATE_ASSETS=false
 
-# WordPress version (in the /source-code directory) to be parsed by WP Parser. Default: "latest"
+# The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
 # 
-# Note: If not set to "latest" it's best to delete the /source-code directory manually prior to provisioning.
-#       This will re-install (instead of update) the older WP version and ensures only files from that version will be parsed.		
-SOURCE_CODE_WP_VERSION="latest"
+# Note:
+# 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
+# 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
+# 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
+# 
+# Default: "latest"
+readonly SOURCE_CODE_WP_VERSION="latest"
+
+# Exclude external libraries when parsing.
+# Default: true
+readonly EXCLUDE_WP_EXTERNAL_LIBS=true
 ```
