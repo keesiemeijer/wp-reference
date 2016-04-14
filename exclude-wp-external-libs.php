@@ -46,8 +46,6 @@ function wppeel_exclude_external_libs( $include, $file ) {
 
 	// Directories to Include from wp-content.
 	$include_wp_content_dirs  = array(
-		'wp-content/themes/twentysixteen/',
-		'wp-content/themes/twentyfifteen/',
 		'wp-content/themes/twentyfourteen/',
 		'wp-content/themes/twentythirteen/',
 		'wp-content/themes/twentytwelve/',
