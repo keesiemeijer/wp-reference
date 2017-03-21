@@ -77,7 +77,10 @@ readonly WP_PARSER_QUICK_MODE=false
 # Default: false
 readonly RESET_WORDPRESS=false
 
-# Update the plugin wp-parser and theme wporg-developer when provisioning.
+# Update the assets when provisioning.
+# Note:
+#   Assets are deleted before being updated if set to true.
+#
 # Default: false
 readonly UPDATE_ASSETS=false
 
@@ -87,7 +90,7 @@ readonly UPDATE_ASSETS=false
 # 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
 # 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
 # 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
-# 
+#
 # Default: "latest"
 readonly SOURCE_CODE_WP_VERSION="latest"
 
@@ -155,22 +158,45 @@ function is_activated(){
 	local name=$1
 	local wptype=$2
 
-	local status='inactive'
-	if [[ $wptype == "plugin" ]]; then
-		local activated=$(wp plugin list --status=active --fields=name --format=csv --allow-root)
-	fi
-
-	if [[ $wptype == "theme" ]]; then
-		local activated=$(wp theme list --status=active --fields=name --format=csv --allow-root)
-	fi
+	local activated=$(wp $wptype list --status=active --fields=name --format=csv --allow-root)
 
 	while read -r line; do
 		if [[ $line == $name ]]; then
-			status='active'
+			return 0
 		fi
 	done <<< "$activated"
 
-	echo $status;
+	return 1
+}
+
+function assets(){
+	local action=$1
+	local wptype=$2
+	local asset=$3
+
+	if [[ $action == "delete" ]]; then
+		if $(wp "$wptype" is-installed "$asset" --allow-root); then
+			if is_file "$WPCLI_COMMANDS_FILE" && [[ "$wptype" == "theme" ]]; then
+				local default_theme="$(wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference theme get_default --allow-root)"
+				wp theme activate "$default_theme" --allow-root
+			fi
+			wp "$wptype" delete "$asset" --allow-root 2>&1 >/dev/null
+		fi
+	fi
+
+	if [[ $action == "activate" ]]; then
+		if $(wp "$wptype" is-installed "$asset" --allow-root 2> /dev/null); then
+			#activate plugin wp-parser
+			if ! is_activated "$asset" "$wptype"; then
+				printf "Activating $wptype $asset...\n"
+				wp "$wptype" activate "$asset" --allow-root
+			else
+				printf "$wptype $asset is activated...\n"
+			fi
+		else
+			printf "\033[0m\nNotice: $wptype $asset is not installed\033[0m\n"
+		fi
+	fi
 }
 
 
@@ -299,33 +325,38 @@ PHP
 			REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
 			REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
-			# =============================================================================
-			# Install and update assets
-			# =============================================================================
 			if [[ "$instal_new" = true || "$UPDATE_ASSETS" = true ]]; then
 
-				#delete plugin wp-parser (if it exists)
-				if $(wp plugin is-installed wp-parser --allow-root); then
-					wp plugin delete wp-parser --allow-root 2>&1 >/dev/null
-				fi
+				# =============================================================================
+				# Delete assets
+				# =============================================================================
 
-				#delete theme wporg-developer (if it exists)
-				if $(wp theme is-installed wporg-developer --allow-root); then
-					if is_file "$WPCLI_COMMANDS_FILE"; then
-						local default_theme="$(wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference theme get_default --allow-root)"
-						wp theme activate "$default_theme" --allow-root
-					fi
-					wp theme delete wporg-developer --allow-root 2>&1 >/dev/null
-				fi
+				assets "delete" "plugin" "wp-parser"
+				assets "delete" "plugin" "syntaxhighlighter"
+				assets "delete" "plugin" "handbook"
+				assets "delete" "theme" "wporg-developer"
+
+				# =============================================================================
+				# install assets
+				# =============================================================================
 
 				cd "$REFERENCE_PLUGIN_PATH"
 
+				# Install phpdoc-parser
 				printf "Installing plugin wp-parser...\n"
 				git clone https://github.com/WordPress/phpdoc-parser.git wp-parser
 				printf "Installing wp-parser dependencies...\n"
 				cd wp-parser
 				composer install
 				composer dump-autoload
+
+				# Install syntaxhighlighter
+				printf "Installing plugin syntaxhighlighter...\n"
+				svn checkout https://plugins.svn.wordpress.org/syntaxhighlighter/trunk "$REFERENCE_PLUGIN_PATH/syntaxhighlighter"
+
+				# Install handbook
+				printf "Installing plugin handbook...\n"
+				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/plugins/handbook/ "$REFERENCE_PLUGIN_PATH/handbook"
 
 				cd "$REFERENCE_THEME_PATH"
 
@@ -423,54 +454,17 @@ PHP
 		REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
 		# =============================================================================
-		# delete exclude-wp-external-libs.php before parsing
+		# Activate assets
 		# =============================================================================
-		if $(wp plugin is-installed exclude-wp-external-libs --allow-root); then
-			wp plugin delete exclude-wp-external-libs --allow-root 2>&1 >/dev/null
-		fi
+		assets "activate" "plugin" "wp-parser"
+		assets "activate" "plugin" "syntaxhighlighter"
+		assets "activate" "plugin" "handbook"
+		assets "activate" "theme" "wporg-developer"
 
-		# =============================================================================
-		# activate exclude-wp-external-libs.php if $EXCLUDE_WP_EXTERNAL_LIBS is true
-		# =============================================================================
-		if [[ "$EXCLUDE_WP_EXTERNAL_LIBS" = true ]]; then
-			if is_file "$CURRENT_PATH/exclude-wp-external-libs.php"; then
-				cp "$CURRENT_PATH/exclude-wp-external-libs.php" "$REFERENCE_PLUGIN_PATH/exclude-wp-external-libs.php"
-				if $(wp plugin is-installed exclude-wp-external-libs --allow-root 2> /dev/null); then
-					if [ $(is_activated exclude-wp-external-libs plugin) != 'active' ]; then
-						printf "Activating plugin exclude-wp-external-libs...\n"
-						wp plugin activate exclude-wp-external-libs --allow-root
-					else
-						printf "Plugin exclude-wp-external-libs is activated...\n"
-					fi
-				fi
-			fi
-		fi
-
-		# =============================================================================
-		# activate wp-parser and wporg-developer and set permalink structure
-		# =============================================================================
-		if $(wp plugin is-installed wp-parser --allow-root 2> /dev/null); then
-			#activate plugin wp-parser
-			if [ $(is_activated wp-parser plugin) != 'active' ]; then
-				printf "Activating plugin wp-parser...\n"
-				wp plugin activate wp-parser --allow-root
-			else
-				printf "Plugin wp-parser is activated...\n"
-			fi
-		else
-			printf "\033[0m\nNotice: plugin WP Parser is not installed\033[0m\n"
-		fi
-
-		if $(wp theme is-installed wporg-developer --allow-root 2> /dev/null); then
-			#activate theme
-			if [ $(is_activated wporg-developer theme) != 'active' ]; then
-				printf "Activating theme wporg-developer...\n"
-				wp theme activate wporg-developer --allow-root
-			else
-				printf "Theme wporg-developer is activated...\n"
-			fi
-		else
-			printf "\e[31mNotice: theme wporg-developer is not installed\033[0m\n"
+		assets "delete" "plugin" "exclude-wp-external-libs"
+		if is_file "$CURRENT_PATH/exclude-wp-external-libs.php" && [[ "$EXCLUDE_WP_EXTERNAL_LIBS" = true ]]; then
+			cp "$CURRENT_PATH/exclude-wp-external-libs.php" "$REFERENCE_PLUGIN_PATH/exclude-wp-external-libs.php"
+			assets "activate" "plugin" "exclude-wp-external-libs"
 		fi
 
 		# =============================================================================
@@ -509,8 +503,6 @@ PHP
 
 			printf "Creating reference pages (if needed)...\n"
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference pages create --allow-root
-			printf "Flushing permalink structure...\n"
-			wp rewrite flush --allow-root
 			printf "Creating empty nav menu (if needed)...\n"
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference nav_menu create --allow-root
 		fi
@@ -523,9 +515,10 @@ PHP
 	# =============================================================================
 	# delete exclude-wp-external-libs.php from /wp-content/plugins/ after parsing
 	# =============================================================================
-	if $(wp plugin is-installed exclude-wp-external-libs --allow-root); then
-		wp plugin delete exclude-wp-external-libs --allow-root 2>&1 >/dev/null
-	fi
+	assets "delete" "plugin" "exclude-wp-external-libs"
+
+	printf "Flushing permalink structure...\n"
+	wp rewrite flush --allow-root
 
 	cd "$CURRENT_PATH"
 	printf "Finished Setup $REFERENCE_HOME_URL!\n"
