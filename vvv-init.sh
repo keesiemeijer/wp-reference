@@ -511,6 +511,8 @@ PHP
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference pages create --allow-root
 			printf "Flushing permalink structure...\n"
 			wp rewrite flush --allow-root
+			printf "Creating empty nav menu (if needed)...\n"
+			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference nav_menu create --allow-root
 		fi
 	else
 		printf "\e[31mSkipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\033[0m\n"

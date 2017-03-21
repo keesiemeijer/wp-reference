@@ -81,6 +81,32 @@ class WP_Parser_Reference extends WP_CLI_Command {
     }
 
     /**
+     * Create empty nav mentu
+     *
+     * @synopsis <create>
+     */
+    function nav_menu( $args, $assoc_args ) {
+
+        $menu_exists = wp_get_nav_menu_object( 'Empty Menu' );
+        if ( $menu_exists ) {
+            WP_CLI::line( "Nav menu exists." );
+            return;
+        }
+
+        $menu_id = wp_create_nav_menu( 'Empty Menu' );
+
+        if ( ! has_nav_menu( 'devhub-menu' ) ) {
+            $locations = get_theme_mod( 'nav_menu_locations' );
+            $locations['devhub-menu'] = $menu_id;
+            set_theme_mod( 'nav_menu_locations', $locations );
+        }
+
+        // Print a success message
+        WP_CLI::success( 'Done creating nav menu.' );
+    }
+
+
+    /**
      * get default theme with STDOUT
      *
      * @synopsis <get_default>
