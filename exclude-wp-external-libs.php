@@ -12,7 +12,7 @@ add_filter( 'wp_parser_pre_import_file', 'wppeel_exclude_external_libs', 10, 2 )
 
 function wppeel_exclude_external_libs( $include, $file ) {
 
-	if ( !( isset( $file['path'] ) && $file['path'] ) ) {
+	if ( ! ( isset( $file['path'] ) && $file['path'] ) ) {
 		return $include;
 	}
 
@@ -81,7 +81,7 @@ function wppeel_exclude_external_libs( $include, $file ) {
 	}
 
 	// Exclude directories and files from wp-content if they're not whitelisted.
-	if ( !$include ) {
+	if ( ! $include ) {
 		return false;
 	}
 
