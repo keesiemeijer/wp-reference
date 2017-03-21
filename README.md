@@ -26,10 +26,10 @@ When provisioning this script will:
   * Install Wordpress (in the /public dir) with domain 'wp-reference.dev'.
 * Update Wordpress in both directories.
 * Install and activate assets
-  *[wporg-developer](https://github.com/Rarst/wporg-developer)
-  *[WP Parser](https://github.com/rmccue/WP-Parser)
-  *[SyntaxHighlighter Evolved](https://wordpress.org/plugins/syntaxhighlighter/)
-  *[Handbook](https://meta.trac.wordpress.org/browser/sites/trunk/wordpress.org/public_html/wp-content/plugins/handbook)
+  * [wporg-developer](https://github.com/Rarst/wporg-developer)
+  * [WP Parser](https://github.com/rmccue/WP-Parser)
+  * [SyntaxHighlighter Evolved](https://wordpress.org/plugins/syntaxhighlighter/)
+  * [Handbook](https://meta.trac.wordpress.org/browser/sites/trunk/wordpress.org/public_html/wp-content/plugins/handbook)
 * Download and edit the [header.php](https://wordpress.org/header.php) and [footer.php](https://wordpress.org/footer.php) files from wordpress.org.
 * Parse the /source-code directory with the WP Parser plugin.
 * Create a static front page (if needed).
