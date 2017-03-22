@@ -85,7 +85,7 @@ readonly RESET_WORDPRESS=false
 readonly UPDATE_ASSETS=false
 
 # The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
-# 
+#
 # Note:
 # 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
 # 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
@@ -294,7 +294,7 @@ function setup_reference {
 	fi
 
 	# =============================================================================
-	# Install/update all the things if connected
+	# Install or update all the things if connected
 	# =============================================================================
 	if [[ $ping_result == "Connected" ]]; then
 
@@ -361,7 +361,7 @@ PHP
 
 				cd "$REFERENCE_THEME_PATH"
 
-				#install theme wporg-developer
+				# Install theme wporg-developer
 				printf "Installing theme wporg-developer...\n"
 				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/themes/pub/wporg-developer/
 
@@ -497,7 +497,7 @@ PHP
 		fi
 
 		# =============================================================================
-		# create pages if needed
+		# create pages and nav menu if needed
 		# =============================================================================
 		if is_file "$WPCLI_COMMANDS_FILE"; then
 
@@ -514,9 +514,6 @@ PHP
 
 	cd "$REFERENCE_SITE_PATH"
 
-	# =============================================================================
-	# delete exclude-wp-external-libs.php from /wp-content/plugins/ after parsing
-	# =============================================================================
 	assets "delete" "plugin" "exclude-wp-external-libs"
 
 	printf "Flushing permalink structure...\n"
