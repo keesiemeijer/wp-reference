@@ -367,11 +367,25 @@ PHP
 				printf "Installing theme wporg-developer...\n"
 				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/themes/pub/wporg-developer/
 
-				printf "Downloading and editing header.php and footer.php in $REFERENCE_THEME_PATH...\n"
-				curl -s -O https://wordpress.org/header.php
-				printf "\n<?php wp_head(); ?>\n" >> header.php
-				curl -s -O https://wordpress.org/footer.php
-				sed -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php > footer.php.tmp && mv footer.php.tmp footer.php
+				local success="Downloaded header.php in $REFERENCE_THEME_PATH...\n"
+				local fail="\e[31mCould not download header.php\033[0m\n"
+
+				# Download header.php and print message
+				curl -f -s -O https://wordpress.org/header.php && printf "$success" || printf "$fail"
+
+				if is_file "$REFERENCE_THEME_PATH/header.php"; then
+					sed -i -e "s/<\/head>/<?php wp_head(); ?>\n<\/head>/g" header.php
+					sed -i -e "s/<body id=\"wordpress-org\" >/<body id=\"wordpress-org\" <?php body_class(); ?>>/g" header.php
+					printf "Done editing header.php\n"
+				fi
+
+				# Download footer.php and print message
+				curl -f -s -O https://wordpress.org/footer.php && printf "${success/header.php/footer.php}" || printf "${fail/header.php/footer.php}"
+
+				if is_file "$REFERENCE_THEME_PATH/footer.php"; then
+					sed -i -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php
+					printf "Done editing footer.php\n"
+				fi
 			fi
 
 			cd "$REFERENCE_SITE_PATH"
