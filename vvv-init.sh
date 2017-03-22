@@ -178,7 +178,9 @@ function assets(){
 		if $(wp "$wptype" is-installed "$asset" --allow-root); then
 			if is_file "$WPCLI_COMMANDS_FILE" && [[ "$wptype" == "theme" ]]; then
 				local default_theme="$(wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference theme get_default --allow-root)"
-				wp theme activate "$default_theme" --allow-root
+				if ! is_activated "$default_theme" "theme"; then
+					wp theme activate "$default_theme" --allow-root
+				fi
 			fi
 			wp "$wptype" delete "$asset" --allow-root 2>&1 >/dev/null
 		fi
