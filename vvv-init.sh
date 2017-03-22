@@ -459,7 +459,8 @@ PHP
 		# =============================================================================
 		assets "activate" "plugin" "wp-parser"
 		assets "activate" "plugin" "syntaxhighlighter"
-		assets "activate" "plugin" "handbook"
+		assets "activate" "plugin" "handbook/handbook"
+		assets "activate" "plugin" "handbook/functionality-for-pages"
 		assets "activate" "theme" "wporg-developer"
 
 		assets "delete" "plugin" "exclude-wp-external-libs"
