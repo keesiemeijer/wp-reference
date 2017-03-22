@@ -10,7 +10,7 @@ This bash script follows these directions to [mirror the code reference](https:/
 
 #### To get started:
 1. Setup [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV) (If you don't already have it)
-2. Clone this branch of this repo into the www directory of your Vagrant as www/wp-reference
+2. Clone this repo into the `www` directory of your Varying Vagrant Vagrants
 3. If your Vagrant is running, from the Vagrant directory run `vagrant halt`
 4. Followed by `vagrant up --provision`. The provisioning may take a while as it will parse all WordPress files.
 
