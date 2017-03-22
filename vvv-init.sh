@@ -158,7 +158,7 @@ function is_activated(){
 	local name=$1
 	local wptype=$2
 
-	local activated=$(wp $wptype list --status=active --fields=name --format=csv --allow-root)
+	local activated=$(wp "$wptype" list --status=active --fields=name --format=csv --allow-root)
 
 	while read -r line; do
 		if [[ $line == $name ]]; then
