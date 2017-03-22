@@ -331,6 +331,7 @@ PHP
 				# Delete assets
 				# =============================================================================
 
+				assets "delete" "plugin" "hello"
 				assets "delete" "plugin" "wp-parser"
 				assets "delete" "plugin" "syntaxhighlighter"
 				assets "delete" "plugin" "handbook"
