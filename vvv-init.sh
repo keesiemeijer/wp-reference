@@ -151,7 +151,20 @@ function is_dir() {
 
 
 function wp_core_is_installed(){
+	# Check for wp-config.php file
+	if ! config_exists; then
+		return 1
+	fi
+
+	# Check if WP tables exist
 	$(wp core is-installed --allow-root 2> /dev/null)
+}
+
+function config_exists() {
+	if is_file "wp-config.php"; then
+		return 0
+	fi
+	return 1
 }
 
 function is_activated(){
@@ -207,6 +220,10 @@ function install_WordPress {
 	cd "$REFERENCE_SITE_PATH"
 
 	if ! wp_core_is_installed; then
+		if ! config_exists; then
+			return 1
+		fi
+
 		# tables don't exist
 		printf "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH...\n"
 		wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
@@ -219,8 +236,6 @@ function install_WordPress {
 			wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 		fi
 	fi
-
-	return
 }
 
 
@@ -430,7 +445,7 @@ PHP
 				printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
 
 				# Install the source-code WordPress install to be able to update
-				if ! wp_core_is_installed && is_file "$SOURCE_CODE_PATH/wp-config.php"; then
+				if ! wp_core_is_installed && config_exists; then
 					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`wordpress-source-reference\`"
 					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`wordpress-source-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
 
@@ -466,7 +481,7 @@ PHP
 	cd "$REFERENCE_SITE_PATH"
 
 	if wp_core_is_installed; then
-	
+
 		REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
 		REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
@@ -512,28 +527,26 @@ PHP
 			printf "\e[31mSkipped parsing. Source code directory doesn't exist\033[0m\n"
 		fi
 
+		cd "$REFERENCE_SITE_PATH"
+
 		# =============================================================================
 		# create pages and nav menu if needed
 		# =============================================================================
 		if is_file "$WPCLI_COMMANDS_FILE"; then
-
-			cd "$REFERENCE_SITE_PATH"
 
 			printf "Creating reference pages (if needed)...\n"
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference pages create --allow-root
 			printf "Creating empty nav menu (if needed)...\n"
 			wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference nav_menu create --allow-root
 		fi
+
+		assets "delete" "plugin" "exclude-wp-external-libs"
+
+		printf "Flushing permalink structure...\n"
+		wp rewrite flush --allow-root
 	else
-		printf "\e[31mSkipped parsing. WordPress is not installed in: $REFERENCE_SITE_PATH\033[0m\n"
+		printf "\e[31mSkipped parsing. Could not find a WordPress install in: $REFERENCE_SITE_PATH\033[0m\n"
 	fi
-
-	cd "$REFERENCE_SITE_PATH"
-
-	assets "delete" "plugin" "exclude-wp-external-libs"
-
-	printf "Flushing permalink structure...\n"
-	wp rewrite flush --allow-root
 
 	cd "$CURRENT_PATH"
 	printf "Finished Setup $REFERENCE_HOME_URL!\n"
