@@ -7,11 +7,6 @@ Parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser)
 
 This bash script follows these directions to [mirror the code reference](https://make.wordpress.org/docs/handbook/projects/devhub/#setting-up-your-development-environment).
 
-
-
-
-You can now visit [http://wp-reference.dev/](http://wp-reference.dev/)
-
 ### Installation
 There are two ways you can install this script. Since VVV version 2 you can add it with a [vvv-custom.yml](https://varyingvagrantvagrants.org/docs/en-US/adding-a-new-site/) file.
 
@@ -39,6 +34,8 @@ For VVV version 1 you'll have to clone this repo into the `www` directory of you
 ### To get started:
 1. If your Vagrant is running, from the Vagrant directory run `vagrant halt`
 2. Followed by `vagrant up --provision`. The provisioning may take a while as it will parse all WordPress files.
+
+You can now visit [http://wp-reference.dev/](http://wp-reference.dev/)
 
 Note: If you don't have the vagrant plugin `vagrant-hostsupdater` installed you'll need to add the domain to your `hosts` file manually before you can visit [http://wp-reference.dev/](http://wp-reference.dev/).
 
