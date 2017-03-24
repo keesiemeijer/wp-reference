@@ -63,26 +63,26 @@
 #
 # Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
 # Default: "wp-reference.dev"
-readonly REFERENCE_HOME_URL="wp-reference.dev"
+REFERENCE_HOME_URL="wp-reference.dev"
 
 # Parse the source code with WP Parser when provisioning.
 # Default: true
-readonly PARSE_SOURCE_CODE=true
+PARSE_SOURCE_CODE=true
 
 # If set to true the --quick subcommand is added to the "wp parser" command. 
 # Default: false
-readonly WP_PARSER_QUICK_MODE=false
+WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
 # Default: false
-readonly RESET_WORDPRESS=false
+RESET_WORDPRESS=false
 
 # Update the assets when provisioning.
 # Note:
 #   Assets are deleted before being updated if set to true.
 #
 # Default: false
-readonly UPDATE_ASSETS=false
+UPDATE_ASSETS=false
 
 # The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
 #
@@ -92,11 +92,11 @@ readonly UPDATE_ASSETS=false
 # 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
 #
 # Default: "latest"
-readonly SOURCE_CODE_WP_VERSION="latest"
+SOURCE_CODE_WP_VERSION="latest"
 
 # Exclude external libraries when parsing.
 # Default: true
-readonly EXCLUDE_WP_EXTERNAL_LIBS=true
+EXCLUDE_WP_EXTERNAL_LIBS=true
 
 
 # =============================================================================
@@ -143,12 +143,10 @@ function is_file() {
 	[[ -f $file ]]
 }
 
-
 function is_dir() {
 	local dir=$1
 	[[ -d $dir ]]
 }
-
 
 function wp_core_is_installed(){
 	# Check for wp-config.php file
@@ -214,7 +212,6 @@ function assets(){
 	fi
 }
 
-
 function install_WordPress {
 
 	cd "$REFERENCE_SITE_PATH"
@@ -237,7 +234,6 @@ function install_WordPress {
 		fi
 	fi
 }
-
 
 function create_files {
 
@@ -262,6 +258,51 @@ function create_files {
 			sed -e "s/testserver\.com/$REFERENCE_HOME_URL/" \
 			-e "s/wordpress-local/$CURRENT_DIR\/public/" local-apache-example.conf-sample > "$CURRENT_DIR.conf"
 		fi
+	fi
+}
+
+# =============================================================================
+# Set variables found in vvv-custom.yml
+# since vvv 2+
+# =============================================================================
+function set_yaml_values(){
+	if ! is_file "/vagrant/vvv-custom.yml"; then
+		return 1
+	fi
+
+	declare -a yaml_bool_vars=("parse_source_code" "wp_parser_quick_mode" "reset_wordpress" "update_assets" "exclude_wp_external_libs")
+	VVV_CONFIG=/vagrant/vvv-custom.yml
+
+	for i in "${yaml_bool_vars[@]}"
+	do
+		local var_bool=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.$i 2> /dev/null`
+
+		if [[ "bool" != $var_bool ]]; then
+			continue
+		fi
+
+		local value=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.$i 2> /dev/null`
+		local var="$( echo $i | tr /a-z/ /A-Z/)"
+
+		if [[ "False" == $value ]]; then
+			eval ${var}=false
+		fi
+
+		if [[ "True" == $value ]]; then
+			eval ${var}=true
+		fi
+	done
+
+	local primary_host_type=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.hosts.0 2> /dev/null`
+	if [[ "str" == $primary_host_type ]]; then
+		local primary_host=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.hosts.0 2> /dev/null`
+		REFERENCE_HOME_URL=${primary_host:-$1}
+	fi
+
+	local wp_version_type=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.source_code_wp_version 2> /dev/null`
+	if [[ "str" == $wp_version_type ]]; then
+		local wp_version=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.source_code_wp_version 2> /dev/null`
+		SOURCE_CODE_WP_VERSION=$wp_version
 	fi
 }
 
@@ -553,6 +594,18 @@ PHP
 }
 
 printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
+
+# set variables if found in vvv-custom.yml
+set_yaml_values
+
+# set variables to readonly
+readonly REFERENCE_HOME_URL=$REFERENCE_HOME_URL
+readonly PARSE_SOURCE_CODE=$PARSE_SOURCE_CODE
+readonly WP_PARSER_QUICK_MODE=$WP_PARSER_QUICK_MODE
+readonly RESET_WORDPRESS=$RESET_WORDPRESS
+readonly UPDATE_ASSETS=$UPDATE_ASSETS
+readonly SOURCE_CODE_WP_VERSION=$SOURCE_CODE_WP_VERSION
+readonly EXCLUDE_WP_EXTERNAL_LIBS=$EXCLUDE_WP_EXTERNAL_LIBS
 
 # create vvv-hosts file or .conf file if it's an Apache box.
 create_files
