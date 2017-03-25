@@ -261,7 +261,7 @@ function create_files {
 	fi
 }
 
-function is_yaml_type(){
+function is_yaml_type() {
 	local yaml_file=$1
 	local yaml_key=$2
 	local check_type=$3
@@ -277,12 +277,18 @@ function is_yaml_type(){
 # Set variables found in vvv-custom.yml
 # since vvv 2+
 # =============================================================================
-function set_yaml_values(){
+function set_yaml_values() {
 	if ! is_file "/vagrant/vvv-custom.yml"; then
 		return 1
 	fi
 
-	# Boolean settings in vvv-custom.yml
+	# Check if shyaml command exists
+	exists_shyaml="$(which shyaml)"
+	if [[ "/usr/local/bin/shyaml" != "${exists_shyaml}" ]]; then
+		return 1
+	fi
+
+	# Boolean settings used in vvv-custom.yml
 	declare -a yaml_bool_vars=("parse_source_code" "wp_parser_quick_mode" "reset_wordpress" "update_assets" "exclude_wp_external_libs")
 	VVV_CONFIG=/vagrant/vvv-custom.yml
 
@@ -295,6 +301,7 @@ function set_yaml_values(){
 		local value=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.$i 2> /dev/null`
 		local var="$( echo $i | tr /a-z/ /A-Z/)"
 
+		# Convert values to booleans
 		if [[ "False" == $value ]]; then
 			eval ${var}=false
 		fi
