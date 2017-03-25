@@ -261,6 +261,18 @@ function create_files {
 	fi
 }
 
+function is_yaml_type(){
+	local yaml_file=$1
+	local yaml_key=$2
+	local check_type=$3
+	local yaml_value_type=`cat ${yaml_file} | shyaml get-type sites.wp-reference.$yaml_key 2> /dev/null`
+	if [[ $yaml_value_type == $check_type ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
 # =============================================================================
 # Set variables found in vvv-custom.yml
 # since vvv 2+
@@ -270,14 +282,13 @@ function set_yaml_values(){
 		return 1
 	fi
 
+	# Boolean settings in vvv-custom.yml
 	declare -a yaml_bool_vars=("parse_source_code" "wp_parser_quick_mode" "reset_wordpress" "update_assets" "exclude_wp_external_libs")
 	VVV_CONFIG=/vagrant/vvv-custom.yml
 
 	for i in "${yaml_bool_vars[@]}"
 	do
-		local var_bool=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.$i 2> /dev/null`
-
-		if [[ "bool" != $var_bool ]]; then
+		if ! is_yaml_type "$VVV_CONFIG" "$i" "bool"; then
 			continue
 		fi
 
@@ -293,14 +304,12 @@ function set_yaml_values(){
 		fi
 	done
 
-	local primary_host_type=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.hosts.0 2> /dev/null`
-	if [[ "str" == $primary_host_type ]]; then
+	if is_yaml_type "$VVV_CONFIG" "hosts.0" "str"; then
 		local primary_host=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.hosts.0 2> /dev/null`
 		REFERENCE_HOME_URL=${primary_host:-$1}
 	fi
 
-	local wp_version_type=`cat ${VVV_CONFIG} | shyaml get-type sites.wp-reference.source_code_wp_version 2> /dev/null`
-	if [[ "str" == $wp_version_type ]]; then
+	if is_yaml_type "$VVV_CONFIG" "source_code_wp_version" "str"; then
 		local wp_version=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.source_code_wp_version 2> /dev/null`
 		SOURCE_CODE_WP_VERSION=$wp_version
 	fi
@@ -507,6 +516,8 @@ PHP
 
 				# Delete database as it's only needed for updating WordPress
 				$(wp db drop --yes --quiet --allow-root 2> /dev/null)
+			else
+				printf "Skipped installing WordPress in $SOURCE_CODE_PATH\n"
 			fi
 		fi
 
@@ -562,6 +573,8 @@ PHP
 				else
 					wp parser create "$SOURCE_CODE_PATH" --user=1 --allow-root
 				fi
+			else
+				printf "Skipped parsing source code directory\n"
 			fi
 
 		else
