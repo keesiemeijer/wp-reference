@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # =============================================================================
 # VVV auto site setup script to mirror the WordPress code reference.
 # https://developer.wordpress.org
@@ -120,7 +122,7 @@ readonly MYSQL_PASSWORD='root'
 # =============================================================================
 
 # current path
-readonly CURRENT_PATH=`pwd`
+readonly CURRENT_PATH=$(pwd)
 
 # DocumentRoot dir in .conf file (if server is Apache)
 readonly CURRENT_DIR="${PWD##*/}"
@@ -155,7 +157,7 @@ function wp_core_is_installed(){
 	fi
 
 	# Check if WP tables exist
-	$(wp core is-installed --allow-root 2> /dev/null)
+	wp core is-installed --allow-root 2> /dev/null
 }
 
 function config_exists() {
@@ -168,11 +170,12 @@ function config_exists() {
 function is_activated(){
 	local name=$1
 	local wptype=$2
+	local activated
 
-	local activated=$(wp "$wptype" list --status=active --fields=name --format=csv --allow-root)
+	activated=$(wp "$wptype" list --status=active --fields=name --format=csv --allow-root)
 
 	while read -r line; do
-		if [[ $line == $name ]]; then
+		if [[ "$line" = "$name" ]]; then
 			return 0
 		fi
 	done <<< "$activated"
@@ -184,37 +187,38 @@ function assets(){
 	local action=$1
 	local wptype=$2
 	local asset=$3
+	local default_theme
 
-	if [[ $action == "delete" ]]; then
-		if $(wp "$wptype" is-installed "$asset" --allow-root); then
-			if is_file "$WPCLI_COMMANDS_FILE" && [[ "$wptype" == "theme" ]]; then
-				local default_theme="$(wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference theme get_default --allow-root)"
+	if [[ $action = "delete" ]]; then
+		if wp "$wptype" is-installed "$asset" --allow-root; then
+			if is_file "$WPCLI_COMMANDS_FILE" && [[ "$wptype" = "theme" ]]; then
+				default_theme="$(wp --require="$WPCLI_COMMANDS_FILE" wp-parser-reference theme get_default --allow-root)"
 				if ! is_activated "$default_theme" "theme"; then
 					wp theme activate "$default_theme" --allow-root
 				fi
 			fi
-			wp "$wptype" delete "$asset" --allow-root 2>&1 >/dev/null
+			wp "$wptype" delete "$asset" --allow-root > /dev/null 2>&1
 		fi
 	fi
 
-	if [[ $action == "activate" ]]; then
-		if $(wp "$wptype" is-installed "$asset" --allow-root 2> /dev/null); then
+	if [[ $action = "activate" ]]; then
+		if wp "$wptype" is-installed "$asset" --allow-root 2> /dev/null; then
 			#activate plugin wp-parser
 			if ! is_activated "$asset" "$wptype"; then
-				printf "Activating $wptype $asset...\n"
+				printf "Activating %s...\n" "$wptype $asset"
 				wp "$wptype" activate "$asset" --allow-root
 			else
-				printf "$wptype $asset is activated...\n"
+				printf "%s is activated\n" "$wptype $asset"
 			fi
 		else
-			printf "\033[0m\nNotice: $wptype $asset is not installed\033[0m\n"
+			printf "\033[0m\nNotice: %s is not installed\033[0m\n" "$wptype $asset"
 		fi
 	fi
 }
 
 function install_WordPress {
 
-	cd "$REFERENCE_SITE_PATH"
+	cd "$REFERENCE_SITE_PATH" || exit
 
 	if ! wp_core_is_installed; then
 		if ! config_exists; then
@@ -222,14 +226,14 @@ function install_WordPress {
 		fi
 
 		# tables don't exist
-		printf "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH...\n"
+		printf "Installing %s in %s...\n" "$REFERENCE_HOME_URL" "$REFERENCE_SITE_PATH"
 		wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 	else
 		#tables exist
 		if [[ "$RESET_WORDPRESS" = true ]]; then
 			printf "Dropping tables in 'wordpress-reference' database...\n"
 			wp db reset --yes --allow-root
-			printf "Installing $REFERENCE_HOME_URL in $REFERENCE_SITE_PATH...\n"
+			printf "Installing %s in %s...\n" "$REFERENCE_HOME_URL" "$REFERENCE_SITE_PATH"
 			wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 		fi
 	fi
@@ -242,9 +246,9 @@ function create_files {
 	# =============================================================================
 
 	if ! is_file "$CURRENT_PATH/vvv-hosts"; then
-		printf "Creating vvv-hosts file in $CURRENT_PATH\n"
+		printf "Creating vvv-hosts file in %s...\n" "$CURRENT_PATH"
 		touch "$CURRENT_PATH/vvv-hosts"
-		printf "$REFERENCE_HOME_URL\n" >> "$CURRENT_PATH/vvv-hosts"
+		printf "%s\n" "$REFERENCE_HOME_URL" >> "%s/vvv-hosts" "$CURRENT_PATH"
 	fi
 
 	# =============================================================================
@@ -253,8 +257,8 @@ function create_files {
 
 	if is_dir "/srv/config/apache-config/sites"; then
 		if ! is_file "/srv/config/apache-config/sites/$CURRENT_DIR.conf"; then
-			cd srv/config/apache-config/sites
-			printf "Creating $CURRENT_DIR.conf in /srv/config/apache-config/sites/...\n"
+			cd srv/config/apache-config/sites || return 1
+			printf "Creating %s.conf in /srv/config/apache-config/sites/...\n" "$CURRENT_DIR"
 			sed -e "s/testserver\.com/$REFERENCE_HOME_URL/" \
 			-e "s/wordpress-local/$CURRENT_DIR\/public/" local-apache-example.conf-sample > "$CURRENT_DIR.conf"
 		fi
@@ -265,8 +269,11 @@ function is_yaml_type() {
 	local yaml_file=$1
 	local yaml_key=$2
 	local check_type=$3
-	local yaml_value_type=`cat ${yaml_file} | shyaml get-type sites.wp-reference.$yaml_key 2> /dev/null`
-	if [[ $yaml_value_type == $check_type ]]; then
+	local yaml_value_type
+
+	yaml_value_type=$(shyaml get-type "sites.wp-reference.$yaml_key" 2> /dev/null < "${yaml_file}")
+
+	if [[ $yaml_value_type = "$check_type" ]]; then
 		return 0
 	fi
 
@@ -278,11 +285,16 @@ function is_yaml_type() {
 # since vvv 2+
 # =============================================================================
 function set_yaml_values() {
+	local yaml_value
+	local variable_name
+	local config_file
+
 	if ! is_file "/vagrant/vvv-custom.yml"; then
 		return 1
 	fi
 
 	# Check if shyaml command exists
+	# Todo: Check with <command> or <type>
 	exists_shyaml="$(which shyaml)"
 	if [[ "/usr/local/bin/shyaml" != "${exists_shyaml}" ]]; then
 		return 1
@@ -290,35 +302,33 @@ function set_yaml_values() {
 
 	# Boolean settings used in vvv-custom.yml
 	declare -a yaml_bool_vars=("parse_source_code" "wp_parser_quick_mode" "reset_wordpress" "update_assets" "exclude_wp_external_libs")
-	VVV_CONFIG=/vagrant/vvv-custom.yml
+	config_file=/vagrant/vvv-custom.yml
 
 	for i in "${yaml_bool_vars[@]}"
 	do
-		if ! is_yaml_type "$VVV_CONFIG" "$i" "bool"; then
+		if ! is_yaml_type "$config_file" "$i" "bool"; then
 			continue
 		fi
 
-		local value=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.$i 2> /dev/null`
-		local var="$( echo $i | tr /a-z/ /A-Z/)"
+		yaml_value=$(shyaml get-value "sites.wp-reference.$i" 2> /dev/null < "${config_file}")
+		variable_name="$( echo "$i" | tr /a-z/ /A-Z/)"
 
 		# Convert values to booleans
-		if [[ "False" == $value ]]; then
-			eval ${var}=false
+		if [[ "False" = "$yaml_value" ]]; then
+			eval "${variable_name}"=false
 		fi
 
-		if [[ "True" == $value ]]; then
-			eval ${var}=true
+		if [[ "True" = "$yaml_value" ]]; then
+			eval "${variable_name}"=true
 		fi
 	done
 
-	if is_yaml_type "$VVV_CONFIG" "hosts.0" "str"; then
-		local primary_host=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.hosts.0 2> /dev/null`
-		REFERENCE_HOME_URL=${primary_host:-$1}
+	if is_yaml_type "$config_file" "hosts.0" "str"; then
+		REFERENCE_HOME_URL=$(shyaml get-value "sites.wp-reference.hosts.0" 2> /dev/null < "${config_file}")
 	fi
 
-	if is_yaml_type "$VVV_CONFIG" "source_code_wp_version" "str"; then
-		local wp_version=`cat ${VVV_CONFIG} | shyaml get-value sites.wp-reference.source_code_wp_version 2> /dev/null`
-		SOURCE_CODE_WP_VERSION=$wp_version
+	if is_yaml_type "$config_file" "source_code_wp_version" "str"; then
+		SOURCE_CODE_WP_VERSION=$(shyaml get-value "sites.wp-reference.source_code_wp_version" 2> /dev/null < "${config_file}")
 	fi
 }
 
@@ -339,11 +349,11 @@ function setup_reference {
 	# to us. If 3 attempts with a timeout of 5 seconds are not successful, then we'll
 	# skip a few things further in provisioning rather than create a bunch of errors.
 	# =============================================================================
-	if [[ "$(wget --tries=3 --timeout=5 --spider http://google.com 2>&1 | grep 'connected')" ]]; then
-		printf "Network connection detected...\n"
+	if wget -q --spider --tries=3 --timeout=5 -O - http://google.com > /dev/null; then
+		printf "Network connection detected\n"
 		local ping_result="Connected"
 	else
-		printf "\e[31mNo network connection detected. Unable to reach google.com...\033[0m\n"
+		printf "\e[31mNo network connection detected. Unable to reach google.com\033[0m\n"
 		local ping_result="Not Connected"
 	fi
 
@@ -362,7 +372,7 @@ function setup_reference {
 	# =============================================================================
 	local instal_new=false
 	if ! is_dir "$REFERENCE_SITE_PATH"; then
-		printf "Creating directory $REFERENCE_SITE_PATH...\n"
+		printf "Creating directory %s...\n" "$REFERENCE_SITE_PATH"
 		instal_new=true
 		mkdir "$REFERENCE_SITE_PATH"
 	fi
@@ -370,19 +380,19 @@ function setup_reference {
 	# =============================================================================
 	# Install or update all the things if connected
 	# =============================================================================
-	if [[ $ping_result == "Connected" ]]; then
+	if [[ $ping_result = "Connected" ]]; then
 
-		cd "$REFERENCE_SITE_PATH"
+		cd "$REFERENCE_SITE_PATH" || exit
 
 		# =============================================================================
 		# download WordPress
 		# =============================================================================
 		if [[ "$instal_new" = true ]]; then
 		
-			printf "Downloading WordPress in $REFERENCE_SITE_PATH...\n"
+			printf "Downloading WordPress in %s...\n" "$REFERENCE_SITE_PATH"
 			wp core download --allow-root
 
-			printf "Creating wp-config in $REFERENCE_SITE_PATH...\n"
+			printf "Creating wp-config in %s...\n" "$REFERENCE_SITE_PATH"
 			wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --extra-php <<PHP
 define( 'WPORGPATH', "$REFERENCE_SITE_PATH/wp-content/themes/" );
 define ('WP_DEBUG', false);
@@ -415,13 +425,13 @@ PHP
 				# install assets
 				# =============================================================================
 
-				cd "$REFERENCE_PLUGIN_PATH"
+				cd "$REFERENCE_PLUGIN_PATH" || exit
 
 				# Install phpdoc-parser
 				printf "Installing plugin wp-parser...\n"
 				git clone https://github.com/WordPress/phpdoc-parser.git wp-parser
 				printf "Installing wp-parser dependencies...\n"
-				cd wp-parser
+				cd wp-parser || exit
 				composer install
 				composer dump-autoload
 
@@ -433,17 +443,19 @@ PHP
 				printf "Installing plugin handbook...\n"
 				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/plugins/handbook/ "$REFERENCE_PLUGIN_PATH/handbook"
 
-				cd "$REFERENCE_THEME_PATH"
+				cd "$REFERENCE_THEME_PATH" || exit
 
 				# Install theme wporg-developer
 				printf "Installing theme wporg-developer...\n"
 				svn checkout http://meta.svn.wordpress.org/sites/trunk/wordpress.org/public_html/wp-content/themes/pub/wporg-developer/
 
-				local success="Downloaded header.php in $REFERENCE_THEME_PATH...\n"
-				local fail="\e[31mCould not download header.php\033[0m\n"
+				local success
+				local fail
+				success="Downloading header.php in $REFERENCE_THEME_PATH..."
+				fail="\e[31mCould not download header.php\033[0m"
 
 				# Download header.php and print message
-				curl -f -s -O https://wordpress.org/header.php && printf "$success" || printf "$fail"
+				curl -f -s -O https://wordpress.org/header.php && printf "%s\n" "$success" || printf "%s\n" "$fail"
 
 				if is_file "$REFERENCE_THEME_PATH/header.php"; then
 					sed -i -e "s/<\/head>/<?php wp_head(); ?>\n<\/head>/g" header.php
@@ -451,8 +463,11 @@ PHP
 					printf "Done editing header.php\n"
 				fi
 
+				success="${success/header.php/footer.php}"
+				fail="${fail/header.php/footer.php}"
+
 				# Download footer.php and print message
-				curl -f -s -O https://wordpress.org/footer.php && printf "${success/header.php/footer.php}" || printf "${fail/header.php/footer.php}"
+				curl -f -s -O https://wordpress.org/footer.php && printf "%s\n" "$success" || printf "%s\n" "$fail"
 
 				if is_file "$REFERENCE_THEME_PATH/footer.php"; then
 					sed -i -e 's|</body>|<?php wp_footer(); ?>\n</body>\n|g' footer.php
@@ -460,13 +475,13 @@ PHP
 				fi
 			fi
 
-			cd "$REFERENCE_SITE_PATH"
+			cd "$REFERENCE_SITE_PATH" || exit
 
 			# =============================================================================
 			# Update wp-reference.dev website
 			# =============================================================================
 			if [[ "$instal_new" = false ]]; then
-					printf "Updating WordPress in $REFERENCE_SITE_PATH\n"
+					printf "Updating WordPress in %s...\n" "$REFERENCE_SITE_PATH"
 					wp core update --allow-root
 			fi
 		fi
@@ -481,9 +496,9 @@ PHP
 
 			if [[ "$SOURCE_CODE_WP_VERSION" != "" ]]; then
 
-				cd "$SOURCE_CODE_PATH"
+				cd "$SOURCE_CODE_PATH" || exit
 
-				printf "Downloading WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH...\n"
+				printf "Downloading WordPress %s in %s...\n" "$SOURCE_CODE_WP_VERSION" "$SOURCE_CODE_PATH"
 				if [[ "$SOURCE_CODE_WP_VERSION" = "latest" ]]; then
 					wp core download --allow-root
 				else
@@ -497,19 +512,19 @@ PHP
 
 			if [[ "$SOURCE_CODE_WP_VERSION" != "" ]]; then
 
-				cd "$SOURCE_CODE_PATH"
+				cd "$SOURCE_CODE_PATH" || exit
 
-				printf "Updating WordPress $SOURCE_CODE_WP_VERSION in $SOURCE_CODE_PATH\n"
+				printf "Updating WordPress %s in %s...\n" "$SOURCE_CODE_WP_VERSION" "$SOURCE_CODE_PATH"
 
 				# Install the source-code WordPress install to be able to update
 				if ! wp_core_is_installed && config_exists; then
 					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`wordpress-source-reference\`"
 					mysql -u "$MYSQL_USER" --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`wordpress-source-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
 
-					wp core install --url="wp-source.dev" --title="Source" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root 2>&1 >/dev/null
+					wp core install --url="wp-source.dev" --title="Source" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root > /dev/null 2>&1
 				else
-					printf "\e[31mNo WordPress install found in $SOURCE_CODE_PATH\n"
-					printf "To re-install WordPress delete the directory $SOURCE_CODE_PATH\033[0m\n"
+					printf "\e[31mNo WordPress install found in %s\n" "$SOURCE_CODE_PATH"
+					printf "To re-install WordPress delete the directory %s\033[0m\n" "$SOURCE_CODE_PATH"
 				fi
 
 				if wp_core_is_installed; then
@@ -522,9 +537,9 @@ PHP
 				fi
 
 				# Delete database as it's only needed for updating WordPress
-				$(wp db drop --yes --quiet --allow-root 2> /dev/null)
+				wp db drop --yes --quiet --allow-root 2> /dev/null
 			else
-				printf "Skipped installing WordPress in $SOURCE_CODE_PATH\n"
+				printf "Skipped installing WordPress in %s\n" "$SOURCE_CODE_PATH"
 			fi
 		fi
 
@@ -537,7 +552,7 @@ PHP
 		fi
 	fi
 
-	cd "$REFERENCE_SITE_PATH"
+	cd "$REFERENCE_SITE_PATH" || exit
 
 	if wp_core_is_installed; then
 
@@ -562,7 +577,7 @@ PHP
 		# =============================================================================
 		# Set permalink structure
 		# =============================================================================
-		printf "Set permalink structure to postname...\n"
+		printf "Set permalink structure to /%%postname%%/...\n"
 		wp rewrite structure '/%postname%/' --allow-root
 		wp rewrite flush --allow-root
 
@@ -572,9 +587,9 @@ PHP
 		if is_dir "$SOURCE_CODE_PATH"; then
 
 			if [[ "$PARSE_SOURCE_CODE" = true ]]; then
-				cd "$REFERENCE_PLUGIN_PATH"
+				cd "$REFERENCE_PLUGIN_PATH" || exit
 
-				printf "Proceed parsing source code directory $SOURCE_CODE_PATH...\n"
+				printf "Parsing source code directory %s...\n" "$SOURCE_CODE_PATH"
 				if [[ "$WP_PARSER_QUICK_MODE" = true  ]]; then
 					wp parser create "$SOURCE_CODE_PATH" --user=1 --quick --allow-root
 				else
@@ -588,7 +603,7 @@ PHP
 			printf "\e[31mSkipped parsing. Source code directory doesn't exist\033[0m\n"
 		fi
 
-		cd "$REFERENCE_SITE_PATH"
+		cd "$REFERENCE_SITE_PATH" || exit
 
 		# =============================================================================
 		# create pages and nav menu if needed
@@ -606,14 +621,14 @@ PHP
 		printf "Flushing permalink structure...\n"
 		wp rewrite flush --allow-root
 	else
-		printf "\e[31mSkipped parsing. Could not find a WordPress install in: $REFERENCE_SITE_PATH\033[0m\n"
+		printf "\e[31mSkipped parsing. Could not find a WordPress install in: %s\033[0m\n" "$REFERENCE_SITE_PATH"
 	fi
 
-	cd "$CURRENT_PATH"
-	printf "Finished Setup $REFERENCE_HOME_URL!\n"
+	cd "$CURRENT_PATH" || exit
+	printf "Finished Setup %s\n" "$REFERENCE_HOME_URL"
 }
 
-printf "\nCommencing Setup $REFERENCE_HOME_URL\n"
+printf "\nCommencing Setup %s\n" "$REFERENCE_HOME_URL"
 
 # set variables if found in vvv-custom.yml
 set_yaml_values
