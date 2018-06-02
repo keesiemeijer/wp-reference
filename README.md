@@ -18,7 +18,7 @@ sites:
   wp-reference:
     repo: https://github.com/keesiemeijer/wp-reference.git
     hosts:
-      - wp-reference.dev
+      - wp-reference.test
     parse_source_code: true
     wp_parser_quick_mode: false
     reset_wordpress: false
@@ -35,16 +35,16 @@ For VVV version 1 you'll have to clone this repo into the `www` directory of you
 1. If your Vagrant is running, from the Vagrant directory run `vagrant halt`
 2. Followed by `vagrant up --provision`. The provisioning may take a while as it will parse all WordPress files.
 
-You can now visit [http://wp-reference.dev/](http://wp-reference.dev/)
+You can now visit [http://wp-reference.test/](http://wp-reference.test/)
 
-Note: If you don't have the vagrant plugin `vagrant-hostsupdater` installed you'll need to add the domain to your `hosts` file manually before you can visit [http://wp-reference.dev/](http://wp-reference.dev/).
+Note: If you don't have the vagrant plugin `vagrant-hostsupdater` installed you'll need to add the domain to your `hosts` file manually before you can visit [http://wp-reference.test/](http://wp-reference.test/).
 
 ### Provisioning
 When provisioning this script will:
 * if the directories /public and /source-code don't exist (inside the wp-reference directory)
   * Create directories /public and /source-code.
   * Download WordPress inside both directories
-  * Install Wordpress (in the /public dir) with domain 'wp-reference.dev'.
+  * Install Wordpress (in the /public dir) with domain 'wp-reference.test'.
 * Update Wordpress in both directories.
 * Install and activate assets
   * [wporg-developer](https://github.com/Rarst/wporg-developer)
@@ -58,7 +58,7 @@ When provisioning this script will:
 * Create a nav menu (if needed).
 
 ### Credentials
-* URL:      wp-reference.dev
+* URL:      wp-reference.test
 * Username: admin
 * Password: password
 * DB Name:  wordpress-reference
@@ -84,8 +84,8 @@ For VVV version 2 you can edit the custom variables in the [vvv-custom.yml](http
 # Domain name
 #
 # Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
-# Default: "wp-reference.dev"
-REFERENCE_HOME_URL="wp-reference.dev"
+# Default: "wp-reference.test"
+REFERENCE_HOME_URL="wp-reference.test"
 
 # Parse the source code with WP Parser when provisioning.
 # Default: true
