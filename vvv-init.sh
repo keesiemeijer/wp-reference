@@ -17,7 +17,7 @@
 # 	if the directories /public and /source-code don't exist (inside the wp-reference directory):
 # 	    Create directories /public and /source-code.
 # 	    Download WordPress inside both directories
-# 	    Install Wordpress (in the /public dir) with domain 'wp-reference.dev'.
+# 	    Install Wordpress (in the /public dir) with domain 'wp-reference.test'.
 # 	Update Wordpress in both directories.
 # 	Install and activate the plugin WP Parser and theme wporg-developer.
 # 	Download and edit the header.php and footer.php files from wordpress.org.
@@ -26,7 +26,7 @@
 # 	Create a reference page (if needed).
 # 
 # Credentials
-# 	URL:      wp-reference.dev
+# 	URL:      wp-reference.test
 # 	Username: admin
 # 	Password: password
 # 	DB Name:  wordpress-reference
@@ -42,7 +42,7 @@
 # 	https://github.com/rmccue/WP-Parser
 # 	https://github.com/Rarst/wporg-developer
 # 
-# To change the domain name 'wp-reference.dev':
+# To change the domain name 'wp-reference.test':
 # 	- edit the domain in REFERENCE_HOME_URL below
 # 	- edit the domain in the vvv-hosts file
 # 	- edit the domain in the vvv-nginx.conf file
@@ -64,8 +64,8 @@
 # Domain name
 #
 # Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
-# Default: "wp-reference.dev"
-REFERENCE_HOME_URL="wp-reference.dev"
+# Default: "wp-reference.test"
+REFERENCE_HOME_URL="wp-reference.test"
 
 # Parse the source code with WP Parser when provisioning.
 # Default: true
@@ -478,7 +478,7 @@ PHP
 			cd "$REFERENCE_SITE_PATH" || exit
 
 			# =============================================================================
-			# Update wp-reference.dev website
+			# Update wp-reference.test website
 			# =============================================================================
 			if [[ "$instal_new" = false ]]; then
 					printf "Updating WordPress in %s...\n" "$REFERENCE_SITE_PATH"
