@@ -25,6 +25,7 @@ sites:
     update_assets: false
     exclude_wp_external_libs: true
     source_code_wp_version: "latest"
+    theme: "default"
 ```
 **Note** The `repo` setting is required and needs to point to this repo. All other settings can be changed.
 
