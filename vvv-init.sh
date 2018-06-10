@@ -76,6 +76,8 @@ PARSE_SOURCE_CODE=true
 WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
+# Boolean value or 'empty'
+# If 'empty is used' all posts, meta, terms etc are deleted
 # Default: false
 RESET_WORDPRESS=false
 
@@ -230,12 +232,19 @@ function install_WordPress {
 		wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 	else
 		#tables exist
+		if [[ "$RESET_WORDPRESS" = 'empty' ]]; then
+			printf "Empty post tables in 'wordpress-reference' database...\n"
+			wp site empty --yes --allow-root
+			return 0
+		fi
+
 		if [[ "$RESET_WORDPRESS" = true ]]; then
-			printf "Dropping tables in 'wordpress-reference' database...\n"
 			wp db reset --yes --allow-root
 			printf "Installing %s in %s...\n" "$REFERENCE_HOME_URL" "$REFERENCE_SITE_PATH"
 			wp core install --url="$REFERENCE_HOME_URL" --title="WordPress Developer Reference" --admin_user=admin --admin_password=password --admin_email=demo@example.com --allow-root
 		fi
+
+
 	fi
 }
 
@@ -322,6 +331,13 @@ function set_yaml_values() {
 			eval "${variable_name}"=true
 		fi
 	done
+
+	if is_yaml_type "$config_file" "reset_wordpress" "str"; then
+		RESET_WORDPRESS=$(shyaml get-value "sites.wp-reference.reset_wordpress" 2> /dev/null < "${config_file}")
+		if [[ "empty" != "$RESET_WORDPRESS" ]]; then
+			RESET_WORDPRESS=false
+		fi
+	fi
 
 	if is_yaml_type "$config_file" "hosts.0" "str"; then
 		REFERENCE_HOME_URL=$(shyaml get-value "sites.wp-reference.hosts.0" 2> /dev/null < "${config_file}")
@@ -617,6 +633,7 @@ PHP
 		fi
 
 		assets "delete" "plugin" "exclude-wp-external-libs"
+		wp plugin deactivate "wp-parser" --allow-root
 
 		printf "Flushing permalink structure...\n"
 		wp rewrite flush --allow-root
