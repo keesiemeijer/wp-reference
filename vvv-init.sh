@@ -71,13 +71,13 @@ REFERENCE_HOME_URL="wp-reference.test"
 # Default: true
 PARSE_SOURCE_CODE=true
 
-# If set to true the --quick subcommand is added to the "wp parser" command. 
+# If set to true the --quick subcommand is added to the "wp parser" command.
 # Default: false
 WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
 # Boolean value or 'empty'
-# If 'empty is used' all posts, meta, terms etc are deleted
+#   If 'empty is used' all post data (posts, meta, terms etc) is deleted
 # Default: false
 RESET_WORDPRESS=false
 
@@ -91,9 +91,9 @@ UPDATE_ASSETS=false
 # The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
 #
 # Note:
-# 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
-# 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
-# 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
+#   Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
+#   Deleting the /source-code dir will re-install WordPress (instead of updating it).
+#   Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
 #
 # Default: "latest"
 SOURCE_CODE_WP_VERSION="latest"

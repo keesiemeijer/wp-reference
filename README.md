@@ -11,7 +11,7 @@ This bash script follows these directions to [mirror the code reference](https:/
 There are two ways you can install this script. Since VVV version 2 you can add it with a [vvv-custom.yml](https://varyingvagrantvagrants.org/docs/en-US/adding-a-new-site/) file.
 
 #### VVV version 2
-Use the `vvv-custom.yml` file to add the reference site and settings. See [custom settings](https://github.com/keesiemeijer/wp-reference#variables) for more information.
+Use the `vvv-custom.yml` file to add the reference site and settings. See [custom settings](https://github.com/keesiemeijer/wp-reference#settings) for more information.
 Here is an example `vvv-custom.yml` file with all the settings you can use.
 ```YAML
 sites:
@@ -75,12 +75,6 @@ For VVV version 2+ you can edit custom settings in the [vvv-custom.yml](https://
 **Note**: The variables in the `vvv-custom.yml` file are the same but lowercase and will override the variables in the `vvv-init.sh` file. 
 
 ```bash
-# =============================================================================
-# Variables
-# 
-# Note: Don't use spaces around the equal sign when editing variables below.
-# =============================================================================
-
 # Domain name
 #
 # Note: If edited, you'll need to edit it also in the vvv-hosts and the vvv-nginx.conf files as well.
@@ -96,8 +90,8 @@ PARSE_SOURCE_CODE=true
 WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
-# Boolean or string 'empty'
-# If 'empty is used' all posts, meta, terms etc are deleted
+# Boolean value or 'empty'
+#   If 'empty is used' all post data (posts, meta, terms etc) is deleted
 # Default: false
 RESET_WORDPRESS=false
 
@@ -109,12 +103,12 @@ RESET_WORDPRESS=false
 UPDATE_ASSETS=false
 
 # The WordPress version (in the /source-code directory) to be parsed by the WP Parser.
-# 
+#
 # Note:
-# 	Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
-# 	Deleting the /source-code dir will re-install WordPress (instead of updating it).
-# 	Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
-# 
+#   Use "latest" or a valid WordPress version in quotes (e.g. "4.4")
+#   Deleting the /source-code dir will re-install WordPress (instead of updating it).
+#   Use an empty string "" to not install/update WP in the /source-code dir. This Let's you parse other code than WP
+#
 # Default: "latest"
 SOURCE_CODE_WP_VERSION="latest"
 
