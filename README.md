@@ -11,7 +11,7 @@ This bash script follows these directions to [mirror the code reference](https:/
 There are two ways you can install this script. Since VVV version 2 you can add it with a [vvv-custom.yml](https://varyingvagrantvagrants.org/docs/en-US/adding-a-new-site/) file.
 
 #### VVV version 2
-Use the `vvv-custom.yml` file to add the reference site. You can also set [custom variables](https://github.com/keesiemeijer/wp-reference#variables) there.
+Use the `vvv-custom.yml` file to add the reference site and settings. See [custom settings](https://github.com/keesiemeijer/wp-reference#variables) for more information.
 Here is an example `vvv-custom.yml` file with all the settings you can use.
 ```YAML
 sites:
@@ -69,8 +69,8 @@ When provisioning this script will:
 * User: root
 * Pass: root
 
-### Variables
-For VVV version 2 you can edit the custom variables in the [vvv-custom.yml](https://github.com/keesiemeijer/wp-reference#vvv-version-2) file. For lower versions edit them in the `vvv-init.sh` file. See the commented variables below from the `vvv-init.sh` file for more information.
+### Settings
+For VVV version 2+ you can edit custom settings in the [vvv-custom.yml](https://github.com/keesiemeijer/wp-reference#vvv-version-2) file. For lower versions edit settings variables in the `vvv-init.sh` file. See the commented variables below from the `vvv-init.sh` file for more information.
 
 **Note**: The variables in the `vvv-custom.yml` file are the same but lowercase and will override the variables in the `vvv-init.sh` file. 
 
@@ -96,6 +96,8 @@ PARSE_SOURCE_CODE=true
 WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
+# Boolean or string 'empty'
+# If 'empty is used' all posts, meta, terms etc are deleted
 # Default: false
 RESET_WORDPRESS=false
 
