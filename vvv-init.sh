@@ -77,7 +77,7 @@ WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
 # Boolean value or 'empty'
-#   If 'empty is used' all post data (posts, meta, terms etc) is deleted
+#   If 'empty' is used all post data (posts, meta, terms etc) is deleted
 # Default: false
 RESET_WORDPRESS=false
 
@@ -98,9 +98,15 @@ UPDATE_ASSETS=false
 # Default: "latest"
 SOURCE_CODE_WP_VERSION="latest"
 
-# Exclude external libraries when parsing.
+# Exclude external libraries when parsing (same as developer.wordpress.org).
 # Default: true
 EXCLUDE_WP_EXTERNAL_LIBS=true
+
+# Theme used for the reference site.
+# The theme needs to exist in the site's themes folder.
+#
+# Default: "default"
+THEME="default"
 
 
 # =============================================================================
@@ -337,6 +343,10 @@ function set_yaml_values() {
 		if [[ "empty" != "$RESET_WORDPRESS" ]]; then
 			RESET_WORDPRESS=false
 		fi
+	fi
+
+	if is_yaml_type "$config_file" "theme" "str"; then
+		THEME=$(shyaml get-value "sites.wp-reference.theme" 2> /dev/null < "${config_file}")
 	fi
 
 	if is_yaml_type "$config_file" "hosts.0" "str"; then
@@ -582,7 +592,15 @@ PHP
 		assets "activate" "plugin" "syntaxhighlighter"
 		assets "activate" "plugin" "handbook/handbook"
 		assets "activate" "plugin" "handbook/functionality-for-pages"
-		assets "activate" "theme" "wporg-developer"
+
+		if [[ "default" = "$THEME" ]]; then
+			assets "activate" "theme" "wporg-developer"
+		else
+			assets "activate" "theme" "$THEME"
+			if ! is_activated "$THEME" "theme"; then
+				assets "activate" "theme" "wporg-developer"
+			fi
+		fi
 
 		assets "delete" "plugin" "exclude-wp-external-libs"
 		if is_file "$CURRENT_PATH/exclude-wp-external-libs.php" && [[ "$EXCLUDE_WP_EXTERNAL_LIBS" = true ]]; then

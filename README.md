@@ -91,7 +91,7 @@ WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
 # Boolean value or 'empty'
-#   If 'empty is used' all post data (posts, meta, terms etc) is deleted
+#   If 'empty' is used all post data (posts, meta, terms etc) is deleted
 # Default: false
 RESET_WORDPRESS=false
 
@@ -115,4 +115,10 @@ SOURCE_CODE_WP_VERSION="latest"
 # Exclude external libraries when parsing (same as developer.wordpress.org).
 # Default: true
 EXCLUDE_WP_EXTERNAL_LIBS=true
+
+# Theme used for the reference site.
+# The theme needs to exist in the site's themes folder.
+#
+# Default: "default"
+THEME="default"
 ```
