@@ -7,6 +7,8 @@ Parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser)
 
 This bash script follows these directions to [mirror the code reference](https://make.wordpress.org/docs/handbook/projects/devhub/#setting-up-your-development-environment).
 
+With some [extra installation steps](https://github.com/keesiemeijer/wp-reference/wiki/Using-WP-Reference-with-the-Local-by-Flywheel-app.) you can also use this script with the [Local by Flywheel app](https://local.getflywheel.com/)
+
 ### Installation
 There are two ways you can install this script. Since VVV version 2 you can add it with a [vvv-custom.yml](https://varyingvagrantvagrants.org/docs/en-US/adding-a-new-site/) file.
 
