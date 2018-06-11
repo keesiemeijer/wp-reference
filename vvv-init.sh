@@ -67,6 +67,7 @@
 # Default: "wp-reference.test"
 REFERENCE_HOME_URL="wp-reference.test"
 
+
 # Parse the source code with WP Parser when provisioning.
 # Default: true
 PARSE_SOURCE_CODE=true
@@ -108,22 +109,22 @@ EXCLUDE_WP_EXTERNAL_LIBS=true
 # Default: "default"
 THEME="default"
 
+# Database Name
+readonly DB_NAME="wordpress-reference"
+
+# Database User
+readonly MYSQL_USER='root'
+
+# Database Password
+readonly MYSQL_PASSWORD='root'
+
+
 
 # =============================================================================
 # 
 # That's all, stop editing! Happy parsing.
 # 
 # =============================================================================
-
-
-# =============================================================================
-# Root mysql credentials
-# =============================================================================
-
-readonly MYSQL_USER='root'
-
-readonly MYSQL_PASSWORD='root'
-
 
 # =============================================================================
 # Directories 
@@ -239,7 +240,7 @@ function install_WordPress {
 	else
 		#tables exist
 		if [[ "$RESET_WORDPRESS" = 'empty' ]]; then
-			printf "Empty post tables in 'wordpress-reference' database...\n"
+			printf "Empty post tables in '$DB_NAME' database...\n"
 			wp site empty --yes --allow-root
 			return 0
 		fi
@@ -388,9 +389,9 @@ function setup_reference {
 	# =============================================================================
 	
 	# check if database exists
-	printf "Creating database 'wordpress-reference' (if it doesn't exist yet)...\n"
-	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`wordpress-reference\`"
-	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`wordpress-reference\`.* TO wp@localhost IDENTIFIED BY 'wp';"
+	printf "Creating database '$DB_NAME' (if it doesn't exist yet)...\n"
+	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`"
+	mysql -u $MYSQL_USER --password="$MYSQL_PASSWORD" -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO wp@localhost IDENTIFIED BY 'wp';"
 
 
 	# =============================================================================
@@ -419,7 +420,7 @@ function setup_reference {
 			wp core download --allow-root
 
 			printf "Creating wp-config in %s...\n" "$REFERENCE_SITE_PATH"
-			wp core config --dbname="wordpress-reference" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --extra-php <<PHP
+			wp core config --dbname="$DB_NAME" --dbuser=wp --dbpass=wp --dbhost="localhost" --allow-root --extra-php <<PHP
 define( 'WPORGPATH', "$REFERENCE_SITE_PATH/wp-content/themes/" );
 define ('WP_DEBUG', false);
 PHP
