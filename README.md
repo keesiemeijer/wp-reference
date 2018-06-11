@@ -131,12 +131,12 @@ THEME="default"
 # default: "wordpress-reference"
 DB_NAME="wordpress-reference"
 
-# Database root user
+# MySQL root user
 #
 # Default: "root"
 MYSQL_USER='root'
 
-# Database root password
+# MySQL root password
 #
 # Default: "root"
 MYSQL_PASSWORD='root'
