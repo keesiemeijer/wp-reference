@@ -375,7 +375,7 @@ function setup_reference {
 	# to us. If 3 attempts with a timeout of 5 seconds are not successful, then we'll
 	# skip a few things further in provisioning rather than create a bunch of errors.
 	# =============================================================================
-	if wget -q --spider --tries=3 --timeout=5 -O - http://google.com > /dev/null; then
+	if ping -c 3 -W 5 8.8.8.8 >> /dev/null 2>&1; then
 		printf "Network connection detected\n"
 		local ping_result="Connected"
 	else
