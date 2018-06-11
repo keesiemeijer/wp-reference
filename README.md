@@ -82,6 +82,7 @@ For VVV version 2+ you can edit custom settings in the [vvv-custom.yml](https://
 # Default: "wp-reference.test"
 REFERENCE_HOME_URL="wp-reference.test"
 
+
 # Parse the source code with WP Parser when provisioning.
 # Default: true
 PARSE_SOURCE_CODE=true
@@ -122,4 +123,13 @@ EXCLUDE_WP_EXTERNAL_LIBS=true
 #
 # Default: "default"
 THEME="default"
+
+# Database Name
+readonly DB_NAME="wordpress-reference"
+
+# Database root user
+readonly MYSQL_USER='root'
+
+# Database root password
+readonly MYSQL_PASSWORD='root'
 ```
