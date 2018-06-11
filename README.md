@@ -127,11 +127,17 @@ EXCLUDE_WP_EXTERNAL_LIBS=true
 THEME="default"
 
 # Database Name
-readonly DB_NAME="wordpress-reference"
+#
+# default: "wordpress-reference"
+DB_NAME="wordpress-reference"
 
 # Database root user
-readonly MYSQL_USER='root'
+#
+# Default: "root"
+MYSQL_USER='root'
 
 # Database root password
-readonly MYSQL_PASSWORD='root'
+#
+# Default: "root"
+MYSQL_PASSWORD='root'
 ```

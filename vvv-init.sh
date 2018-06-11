@@ -110,13 +110,19 @@ EXCLUDE_WP_EXTERNAL_LIBS=true
 THEME="default"
 
 # Database Name
-readonly DB_NAME="wordpress-reference"
+#
+# default: "wordpress-reference"
+DB_NAME="wordpress-reference"
 
 # Database root user
-readonly MYSQL_USER='root'
+#
+# Default: "root"
+MYSQL_USER='root'
 
 # Database root password
-readonly MYSQL_PASSWORD='root'
+#
+# Default: "root"
+MYSQL_PASSWORD='root'
 
 
 
@@ -677,6 +683,10 @@ readonly RESET_WORDPRESS=$RESET_WORDPRESS
 readonly UPDATE_ASSETS=$UPDATE_ASSETS
 readonly SOURCE_CODE_WP_VERSION=$SOURCE_CODE_WP_VERSION
 readonly EXCLUDE_WP_EXTERNAL_LIBS=$EXCLUDE_WP_EXTERNAL_LIBS
+readonly THEME=$THEME
+readonly DB_NAME=$DB_NAME
+readonly MYSQL_USER=$MYSQL_USER
+readonly MYSQL_PASSWORD=$MYSQL_PASSWORD
 
 # create vvv-hosts file or .conf file if it's an Apache box.
 create_files
