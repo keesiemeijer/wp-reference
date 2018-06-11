@@ -112,10 +112,10 @@ THEME="default"
 # Database Name
 readonly DB_NAME="wordpress-reference"
 
-# Database User
+# Database root user
 readonly MYSQL_USER='root'
 
-# Database Password
+# Database root password
 readonly MYSQL_PASSWORD='root'
 
 
