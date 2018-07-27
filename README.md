@@ -1,7 +1,7 @@
 wp-reference
 ============
 
-VVV auto site setup script to mirror the [WordPress code reference](https://developer.wordpress.org).
+VVV auto site setup script to mirror the [WordPress code reference](https://developer.wordpress.org). Can also be used to create a reference site for any other php code.
 
 Parse WordPress with the [WP Parser plugin](https://github.com/rmccue/WP-Parser) and mirror the WordPress code reference using [Varying Vagrant Vagrants](https://github.com/Varying-Vagrant-Vagrants/VVV).
 
