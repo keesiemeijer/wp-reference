@@ -13,7 +13,7 @@ With some [extra installation steps](https://github.com/keesiemeijer/wp-referenc
 There are two ways you can install this script. Since VVV version 2 you can add it with a [vvv-custom.yml](https://varyingvagrantvagrants.org/docs/en-US/adding-a-new-site/) file.
 
 #### VVV version 2
-Use the `vvv-custom.yml` file to add the reference site and settings. See [custom settings](https://github.com/keesiemeijer/wp-reference#settings) for more information.
+Use the `vvv-custom.yml` file to add the reference site and settings. See [custom settings](https://github.com/keesiemeijer/wp-reference#settings) for more information about these settings.
 Here is an example `vvv-custom.yml` file with all the settings you can use.
 ```YAML
 sites:
@@ -108,7 +108,7 @@ WP_PARSER_QUICK_MODE=false
 
 # Delete all tables in the database when provisioning (re-installs WP).
 # Boolean value or 'empty'
-#   If 'empty' is used all post data (posts, meta, terms etc) is deleted
+#   If 'empty' is used all post data (posts, meta, terms etc) is deleted before parsing
 # Default: false
 RESET_WORDPRESS=false
 
