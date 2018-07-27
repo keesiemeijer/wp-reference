@@ -60,6 +60,19 @@ When provisioning this script will:
 * Create a reference page (if needed).
 * Create a nav menu (if needed).
 
+### Parsing code
+If the referece site is provisioned you can use this script to parse code (in the source-code directory).
+
+From the Vagrant directory run `vagrant ssh` and go to wp-reference directory
+```bash
+cd /vagrant/www/wp-reference
+```
+
+To parse code with the settings in your [vvv-custom.yml](https://github.com/keesiemeijer/wp-reference#vvv-version-2) file run the following command.
+```bash
+bash vvv-init.sh
+```
+
 ### Credentials
 * URL:      wp-reference.test
 * Username: admin
