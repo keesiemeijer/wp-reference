@@ -449,7 +449,7 @@ PHP
 				# =============================================================================
 
 				assets "delete" "plugin" "hello"
-				assets "delete" "plugin" "wp-parser"
+				assets "delete" "plugin" "phpdoc-parser"
 				assets "delete" "plugin" "syntaxhighlighter"
 				assets "delete" "plugin" "handbook"
 				assets "delete" "theme" "wporg-developer"
@@ -462,9 +462,9 @@ PHP
 
 				# Install phpdoc-parser
 				printf "Installing plugin wp-parser...\n"
-				git clone https://github.com/WordPress/phpdoc-parser.git wp-parser
+				git clone https://github.com/WordPress/phpdoc-parser.git phpdoc-parser
 				printf "Installing wp-parser dependencies...\n"
-				cd wp-parser || exit
+				cd phpdoc-parser || exit
 				composer install
 				composer dump-autoload
 
@@ -595,7 +595,7 @@ PHP
 		# =============================================================================
 		# Activate assets
 		# =============================================================================
-		assets "activate" "plugin" "wp-parser"
+		assets "activate" "plugin" "phpdoc-parser"
 		assets "activate" "plugin" "syntaxhighlighter"
 		assets "activate" "plugin" "handbook/handbook"
 		assets "activate" "plugin" "handbook/functionality-for-pages"
@@ -658,7 +658,7 @@ PHP
 		fi
 
 		assets "delete" "plugin" "exclude-wp-external-libs"
-		wp plugin deactivate "wp-parser" --allow-root
+		wp plugin deactivate "phpdoc-parser" --allow-root
 
 		printf "Flushing permalink structure...\n"
 		wp rewrite flush --allow-root
