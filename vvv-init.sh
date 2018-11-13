@@ -229,6 +229,20 @@ function assets(){
 			printf "\033[0m\nNotice: %s is not installed\033[0m\n" "$wptype $asset"
 		fi
 	fi
+
+	if [[ $action = "deactivate" ]]; then
+		if wp "$wptype" is-installed "$asset" --allow-root 2> /dev/null; then
+			#activate plugin wp-parser
+			if is_activated "$asset" "$wptype"; then
+				printf "De-activating %s...\n" "$wptype $asset"
+				wp "$wptype" deactivate "$asset" --allow-root
+			else
+				printf "%s is de-activated\n" "$wptype $asset"
+			fi
+		else
+			printf "\033[0m\nNotice: %s is not installed\033[0m\n" "$wptype $asset"
+		fi
+	fi
 }
 
 function install_WordPress {
@@ -450,6 +464,7 @@ PHP
 
 				assets "delete" "plugin" "hello"
 				assets "delete" "plugin" "phpdoc-parser"
+				assets "delete" "plugin" "posts-to-posts"
 				assets "delete" "plugin" "syntaxhighlighter"
 				assets "delete" "plugin" "handbook"
 				assets "delete" "theme" "wporg-developer"
@@ -467,6 +482,10 @@ PHP
 				cd phpdoc-parser || exit
 				composer install
 				composer dump-autoload
+
+				# Install posts to posts
+				printf "Installing plugin posts to posts...\n"
+				svn checkout https://plugins.svn.wordpress.org/posts-to-posts/trunk "$REFERENCE_PLUGIN_PATH/posts-to-posts"
 
 				# Install syntaxhighlighter
 				printf "Installing plugin syntaxhighlighter...\n"
@@ -592,6 +611,9 @@ PHP
 		REFERENCE_PLUGIN_PATH=$(wp plugin path --allow-root)
 		REFERENCE_THEME_PATH=$(wp theme path --allow-root)
 
+		# The posts-to-posts plugin uses the same library as the phpdoc-parser
+		assets "deactivate" "plugin" "posts-to-posts"
+
 		# =============================================================================
 		# Activate assets
 		# =============================================================================
@@ -658,7 +680,8 @@ PHP
 		fi
 
 		assets "delete" "plugin" "exclude-wp-external-libs"
-		wp plugin deactivate "phpdoc-parser" --allow-root
+		assets "deactivate" "plugin" "phpdoc-parser"
+		assets "activate" "plugin" "posts-to-posts"
 
 		printf "Flushing permalink structure...\n"
 		wp rewrite flush --allow-root
